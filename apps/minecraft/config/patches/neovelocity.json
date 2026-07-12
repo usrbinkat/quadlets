@@ -1,5 +1,5 @@
 {
-  "file": "/data/config/crossstitch/crossstitch.toml",
+  "file": "/data/config/neovelocity-common.toml",
   "ops": [
     {
       "$set": {
