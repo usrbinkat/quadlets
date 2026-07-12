@@ -35,7 +35,7 @@ Notify=healthy
 
 StopTimeout=190
 
-Memory=7g
+Memory=8g
 PidsLimit=8192
 Ulimit=nofile=65536:65536
 
@@ -68,7 +68,7 @@ Timezone=America/Los_Angeles
 #   CgroupConf=memory.high=6300000000
 #   CgroupConf=memory.oom.group=1
 # Podman 5.8: pass via --cgroup-conf flag
-PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=6300000000 --cgroup-conf=memory.oom.group=1
+PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=7200000000 --cgroup-conf=memory.oom.group=1
 
 [Quadlet]
 DefaultDependencies=true
@@ -79,7 +79,7 @@ RestartSec=30
 RestartSteps=4
 RestartMaxDelaySec=300
 OOMPolicy=stop
-MemoryHigh=6300M
+MemoryHigh=7200M
 MemorySwapMax=0
 TimeoutStartSec=900
 TimeoutStopSec=220
