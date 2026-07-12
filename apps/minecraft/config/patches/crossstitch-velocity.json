@@ -1,0 +1,15 @@
+{
+  "patches": [
+    {
+      "file": "/data/config/crossstitch/crossstitch.toml",
+      "ops": [
+        {
+          "$set": {
+            "path": "$.secret",
+            "value": "${CFG_VELOCITY_SECRET}"
+          }
+        }
+      ]
+    }
+  ]
+}

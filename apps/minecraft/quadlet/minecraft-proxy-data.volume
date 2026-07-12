@@ -1,0 +1,10 @@
+[Volume]
+VolumeName=minecraft-proxy-data
+UID=1000
+GID=1000
+User=1000
+Group=1000
+Copy=false
+Label=app=minecraft
+Label=role=proxy
+Label=managed-by=quadlet

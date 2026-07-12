@@ -1,0 +1,6 @@
+[Image]
+Image=docker.io/itzg/minecraft-server:java25
+ImageTag=docker.io/itzg/minecraft-server:java25
+Retry=3
+RetryDelay=5s
+TLSVerify=true

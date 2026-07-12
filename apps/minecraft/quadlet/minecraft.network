@@ -1,0 +1,8 @@
+[Network]
+NetworkName=minecraft
+Subnet=10.89.100.0/24
+Gateway=10.89.100.1
+DisableDNS=false
+NetworkDeleteOnStop=false
+Label=app=minecraft
+Label=managed-by=quadlet

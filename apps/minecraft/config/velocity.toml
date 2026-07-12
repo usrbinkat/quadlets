@@ -1,0 +1,62 @@
+config-version = "2.8"
+
+bind = "${CFG_BIND}"
+motd = "${CFG_MOTD}"
+show-max-players = ${CFG_SHOW_MAX_PLAYERS}
+online-mode = ${CFG_ONLINE_MODE}
+force-key-authentication = ${CFG_FORCE_KEY_AUTH}
+prevent-client-proxy-connections = false
+player-info-forwarding-mode = "${CFG_PLAYER_INFO_FORWARDING_MODE}"
+forwarding-secret-file = "forwarding.secret"
+announce-forge = ${CFG_ANNOUNCE_FORGE}
+kick-existing-players = ${CFG_KICK_EXISTING}
+ping-passthrough = "${CFG_PING_PASSTHROUGH}"
+enable-player-address-logging = ${CFG_ENABLE_PLAYER_ADDRESS_LOGGING}
+sample-players-in-ping = false
+
+[packet-limiter]
+interval = 7
+packets-per-second = -1
+bytes-per-second = -1
+decompressed-bytes-per-second = 5242880
+
+[servers]
+survival = "${CFG_SERVER_SURVIVAL}"
+creative = "${CFG_SERVER_CREATIVE}"
+modded-survival = "${CFG_SERVER_MODDED_SURVIVAL}"
+modded-creative = "${CFG_SERVER_MODDED_CREATIVE}"
+try = ["survival"]
+
+[forced-hosts]
+"${CFG_HOST_SURVIVAL}" = ["survival"]
+"${CFG_HOST_CREATIVE}" = ["creative"]
+"${CFG_HOST_MODDED}" = ["modded-survival"]
+"${CFG_HOST_MODDED_CREATIVE}" = ["modded-creative"]
+
+[advanced]
+compression-threshold = 256
+compression-level = -1
+login-ratelimit = 3000
+connection-timeout = 5000
+read-timeout = 30000
+haproxy-protocol = false
+tcp-fast-open = ${CFG_TCP_FAST_OPEN}
+bungee-plugin-message-channel = true
+show-ping-requests = false
+failover-on-unexpected-server-disconnect = ${CFG_FAILOVER}
+announce-proxy-commands = true
+log-command-executions = ${CFG_LOG_COMMAND_EXECUTIONS}
+log-player-connections = ${CFG_LOG_PLAYER_CONNECTIONS}
+accepts-transfers = false
+enable-reuse-port = false
+command-rate-limit = 50
+forward-commands-if-rate-limited = true
+kick-after-rate-limited-commands = 0
+tab-complete-rate-limit = 10
+kick-after-rate-limited-tab-completes = 0
+
+[query]
+enabled = false
+port = 25565
+map = "Velocity"
+show-plugins = false
