@@ -9,7 +9,7 @@
 # Idempotent: skips download if the JAR filename already exists.
 # Fails loudly: any download failure is reported and counted; exits
 # with the failure count so the caller knows something is wrong.
-set -euo pipefail
+set -euxo pipefail
 
 WORLD="${1:?Usage: $0 <world> [plugins-file]}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

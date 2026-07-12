@@ -10,7 +10,7 @@
 # section below with:
 #   podman quadlet install --application=minecraft --replace "${APP_DIR}/quadlet/"
 # and remove the manual file copy logic.
-set -euo pipefail
+set -euxo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(dirname "$SCRIPT_DIR")"

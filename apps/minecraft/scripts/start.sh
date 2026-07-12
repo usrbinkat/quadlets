@@ -5,7 +5,7 @@
 # Every action is timestamped. Every condition is checked explicitly.
 # On success: reports loaded plugins/mods, startup duration, health status.
 # On failure: reports which stage failed, dumps journal logs, lists installed artifacts.
-set -euo pipefail
+set -euxo pipefail
 
 TARGET="${1:-all}"
 FAILURES=0
