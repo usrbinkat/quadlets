@@ -48,7 +48,7 @@ LogOpt=tag=minecraft-%i
 Label=app=minecraft
 Label=instance=%i
 Label=managed-by=quadlet
-Annotation=io.containers.description=BrainCraft Minecraft %i Server
+Annotation=io.containers.description=BrainCraft_Minecraft_%i_Server
 
 EnvironmentFile=%h/.config/containers/systemd/minecraft-secrets.env
 EnvironmentFile=%h/.config/containers/systemd/minecraft-%i.env
