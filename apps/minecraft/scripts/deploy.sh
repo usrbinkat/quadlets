@@ -160,8 +160,9 @@ for world in proxy survival creative modded insane; do
     mem="${!fleet_mem_var:-}"
     if [[ -n "$mem" ]]; then
         mem_bytes=$(memory_to_bytes "$mem")
-        # memory.high at 90% of container memory — throttle before OOM kill
-        high_bytes=$(( mem_bytes * 90 / 100 ))
+        # memory.high at 96% of container memory — thin buffer before hard limit
+        # 90% was too aggressive: throttled AlwaysPreTouch during JVM startup
+        high_bytes=$(( mem_bytes * 96 / 100 ))
         high_systemd=$(( high_bytes / 1048576 ))M
 
         cat > "${dropin_dir}/10-memory.conf" <<EOF

@@ -31,7 +31,7 @@ HealthStartupTimeout=10s
 HealthCmd=/usr/local/bin/mc-health
 HealthInterval=30s
 HealthRetries=5
-HealthStartPeriod=180s
+HealthStartPeriod=600s
 HealthTimeout=10s
 HealthOnFailure=kill
 Notify=healthy
@@ -71,7 +71,7 @@ Timezone=America/Los_Angeles
 #   CgroupConf=memory.high=10800000000
 #   CgroupConf=memory.oom.group=1
 # Podman 5.8: pass via --cgroup-conf flag
-PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=10800000000 --cgroup-conf=memory.oom.group=1
+PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=12348030976 --cgroup-conf=memory.oom.group=1
 
 [Quadlet]
 DefaultDependencies=true
@@ -83,7 +83,7 @@ RestartSteps=4
 RestartMaxDelaySec=300
 OOMPolicy=kill
 ManagedOOMMemoryPressure=kill
-MemoryHigh=10800M
+MemoryHigh=11776M
 MemorySwapMax=0
 TimeoutStartSec=900
 TimeoutStopSec=220
