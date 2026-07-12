@@ -1,6 +1,0 @@
-[Image]
-Image=docker.io/itzg/minecraft-server:java21
-ImageTag=docker.io/itzg/minecraft-server:java21
-Retry=3
-RetryDelay=5s
-TLSVerify=true

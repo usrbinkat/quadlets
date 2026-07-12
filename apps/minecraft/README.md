@@ -50,8 +50,8 @@ Internet
 |-------|-------------|-----------|------------|------|-------------|
 | survival | Paper | survival | normal | none | `survival.play.braincraft.io` |
 | creative | Paper | creative | peaceful | none | `creative.play.braincraft.io` |
-| modded-survival | NeoForge | survival | hard | CrossStitch, Lithium, Spark, Chunky | `modded.play.braincraft.io` |
-| modded-creative | NeoForge | creative | peaceful | CrossStitch, Lithium, Spark, Chunky | `modded-creative.play.braincraft.io` |
+| modded-survival | NeoForge | survival | hard | NeoVelocity, Lithium, Spark, Chunky | `modded.play.braincraft.io` |
+| modded-creative | NeoForge | creative | peaceful | NeoVelocity, Lithium, Spark, Chunky | `modded-creative.play.braincraft.io` |
 
 All worlds share the same whitelist, operator list, and player authentication.
 A player's UUID, skin, and cape are preserved across all worlds via Velocity
@@ -87,7 +87,7 @@ Prerequisites (one-time, handled by VM provisioning):
 
 ```bash
 loginctl enable-linger $(whoami)
-podman pull docker.io/itzg/minecraft-server:java25
+podman pull docker.io/itzg/minecraft-server:java21
 podman pull docker.io/itzg/mc-proxy:java25
 ```
 
@@ -149,9 +149,9 @@ integration is configured via `PATCH_DEFINITIONS`, which patches
 `paper-global.yml` at `$.proxies.velocity.*` with the shared forwarding secret.
 
 **NeoForge (modded-survival, modded-creative):** Full mod ecosystem. The
-CrossStitch mod implements the `velocity:player_info` login plugin channel for
+NeoVelocity mod implements the `velocity:player_info` login plugin channel for
 NeoForge, enabling modern forwarding. It is installed automatically via
-`MODRINTH_PROJECTS=crossstitch` and configured via `PATCH_DEFINITIONS`.
+`MODRINTH_PROJECTS=neovelocity` and configured via `PATCH_DEFINITIONS`.
 
 All backends run with `ONLINE_MODE=false` — they trust the proxy's forwarding
 data rather than authenticating players directly. `ENFORCE_SECURE_PROFILE=false`
@@ -227,10 +227,8 @@ cgroup kill — no partially-dead JVM state.
 | File | Purpose |
 |------|---------|
 | `quadlet/minecraft.network` | Podman bridge network (10.89.100.0/24, DNS enabled) |
-| `quadlet/minecraft-server.image` | Backend image pre-pull (itzg/minecraft-server:java25) |
+| `quadlet/minecraft-server.image` | Backend image pre-pull (itzg/minecraft-server:java21) |
 | `quadlet/minecraft-proxy.image` | Proxy image pre-pull (itzg/mc-proxy:java25) |
-| `quadlet/minecraft-proxy-data.volume` | Proxy persistent state (velocity.toml, plugins) |
-| `quadlet/minecraft-data@.volume` | Backend volume template (world, mods, config per instance) |
 | `quadlet/minecraft-proxy.container` | Velocity proxy unit (only published port) |
 | `quadlet/minecraft@.container` | Backend server template (no published ports) |
 | `quadlet/minecraft@modded-survival.container.d/20-resources.conf` | Modded resource overrides |
@@ -243,8 +241,9 @@ cgroup kill — no partially-dead JVM state.
 | `env/minecraft-modded-creative.env` | Modded creative configuration |
 | `config/velocity.toml` | Velocity config template (${CFG_*} placeholders) |
 | `config/patches/paper-velocity.json` | PATCH_DEFINITIONS for Paper velocity support |
-| `config/patches/crossstitch-velocity.json` | PATCH_DEFINITIONS for NeoForge forwarding |
+| `config/patches/neovelocity.json` | PATCH_DEFINITIONS for NeoForge forwarding (NeoVelocity) |
 | `scripts/deploy.sh` | Deployment automation (install + secret generation) |
+| `scripts/start.sh` | Fleet start/stop/restart orchestration |
 | `scripts/generate-secret.sh` | Forwarding secret generator |
 
 ## Configuration Reference
@@ -305,7 +304,7 @@ check to pass. On failure, it rolls back automatically.
 For manual updates:
 
 ```bash
-podman pull docker.io/itzg/minecraft-server:java25
+podman pull docker.io/itzg/minecraft-server:java21
 systemctl --user restart minecraft@survival.service
 ```
 
@@ -353,9 +352,9 @@ systemctl --user show minecraft@survival.service \
 - **Container runtime:** Podman 5.x+ (Quadlet generator, CgroupConf=, pasta networking)
 - **Init:** systemd 254+ (RestartSteps=, Delegate=yes .control subcgroup, OOMPolicy=)
 - **Session:** `loginctl enable-linger` enabled for the deploying user
-- **RAM:** 16Gi minimum for proxy + 2 vanilla worlds; 32Gi for all 4 worlds simultaneous
-- **CPU:** 2+ cores (4 recommended for modded worlds under load)
-- **Storage:** 32Gi+ root disk (container images, named volumes, world data)
+- **RAM:** 16Gi minimum for proxy + 2 vanilla worlds; 32Gi recommended for all 4 worlds simultaneous
+- **CPU:** 4+ cores (8 threads recommended for modded worlds under load)
+- **Storage:** 64Gi+ root disk (container images, world data in ~/minecraft/)
 
 Built on [itzg/docker-minecraft-server](https://github.com/itzg/docker-minecraft-server),
 [itzg/docker-bungeecord](https://github.com/itzg/docker-bungeecord) (mc-proxy),
