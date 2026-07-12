@@ -1,0 +1,15 @@
+{
+  "file": "/data/config/paper-world-defaults.yml",
+  "ops": [
+    {
+      "$set": {
+        "$.anticheat.anti-xray.enabled": true,
+        "$.anticheat.anti-xray.engine-mode": 1,
+        "$.anticheat.anti-xray.max-block-height": 64,
+        "$.anticheat.anti-xray.update-radius": 2,
+        "$.anticheat.anti-xray.lava-obscures": false,
+        "$.anticheat.anti-xray.use-permission": false
+      }
+    }
+  ]
+}
