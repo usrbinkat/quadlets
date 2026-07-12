@@ -6,6 +6,11 @@
 # Each start: stops existing container (if running), resets failed state,
 # then starts fresh. No data loss — world data is in ~/minecraft/<instance>/
 # which persists across container lifecycle. Containers are ephemeral (--rm).
+#
+# Service naming:
+#   Vanilla worlds use the template: minecraft@survival.service, minecraft@creative.service
+#   Modded worlds use explicit units: minecraft-modded-survival.service, minecraft-modded-creative.service
+#   (Podman 5.8 does not support Image= override in template drop-ins)
 set -euo pipefail
 
 TARGET="${1:-all}"
@@ -26,15 +31,21 @@ case "${TARGET}" in
     proxy)
         start_service minecraft-proxy.service
         ;;
-    survival|creative|modded-survival|modded-creative)
+    survival|creative)
         start_service "minecraft@${TARGET}.service"
+        ;;
+    modded-survival)
+        start_service minecraft-modded-survival.service
+        ;;
+    modded-creative)
+        start_service minecraft-modded-creative.service
         ;;
     all)
         start_service minecraft-proxy.service
         start_service minecraft@survival.service
         start_service minecraft@creative.service
-        start_service minecraft@modded-survival.service
-        start_service minecraft@modded-creative.service
+        start_service minecraft-modded-survival.service
+        start_service minecraft-modded-creative.service
         ;;
     *)
         echo "Usage: $0 [proxy|survival|creative|modded-survival|modded-creative|all]"

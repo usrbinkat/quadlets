@@ -87,6 +87,7 @@ Prerequisites (one-time, handled by VM provisioning):
 
 ```bash
 loginctl enable-linger $(whoami)
+podman pull docker.io/itzg/minecraft-server:java25
 podman pull docker.io/itzg/minecraft-server:java21
 podman pull docker.io/itzg/mc-proxy:java25
 ```
@@ -105,8 +106,8 @@ Start the fleet:
 systemctl --user start minecraft-proxy.service
 systemctl --user start minecraft@survival.service
 systemctl --user start minecraft@creative.service
-systemctl --user start minecraft@modded-survival.service
-systemctl --user start minecraft@modded-creative.service
+systemctl --user start minecraft-modded-survival.service
+systemctl --user start minecraft-modded-creative.service
 ```
 
 Verify:
@@ -185,9 +186,11 @@ The backend template `minecraft@.container` is instantiated per world. Systemd
 specifier `%i` expands to the instance name (survival, creative, etc.) in
 container names, hostnames, log tags, volume names, and environment file paths.
 
-Modded instances use drop-in override files (`minecraft@modded-survival.container.d/
-20-resources.conf`) to increase memory limits, PID limits, CPU weight, and stop
-timeouts without duplicating the entire template.
+Modded instances use dedicated `.container` files (`minecraft-modded-survival.container`,
+`minecraft-modded-creative.container`) with `Image=minecraft-server-java21.image`.
+Paper 26.x requires Java 25; NeoForge requires Java 21 (`jdk.crypto.ec` module).
+Separate container files allow each server type to reference the correct image
+independently.
 
 ### Health and Lifecycle
 
@@ -227,12 +230,13 @@ cgroup kill — no partially-dead JVM state.
 | File | Purpose |
 |------|---------|
 | `quadlet/minecraft.network` | Podman bridge network (10.89.100.0/24, DNS enabled) |
-| `quadlet/minecraft-server.image` | Backend image pre-pull (itzg/minecraft-server:java21) |
+| `quadlet/minecraft-server.image` | Vanilla backend image pre-pull (itzg/minecraft-server:java25) |
+| `quadlet/minecraft-server-java21.image` | Modded backend image pre-pull (itzg/minecraft-server:java21) |
 | `quadlet/minecraft-proxy.image` | Proxy image pre-pull (itzg/mc-proxy:java25) |
 | `quadlet/minecraft-proxy.container` | Velocity proxy unit (only published port) |
-| `quadlet/minecraft@.container` | Backend server template (no published ports) |
-| `quadlet/minecraft@modded-survival.container.d/20-resources.conf` | Modded resource overrides |
-| `quadlet/minecraft@modded-creative.container.d/20-resources.conf` | Modded resource overrides |
+| `quadlet/minecraft@.container` | Vanilla backend server template (Paper, java25) |
+| `quadlet/minecraft-modded-survival.container` | Modded survival (NeoForge, java21, explicit) |
+| `quadlet/minecraft-modded-creative.container` | Modded creative (NeoForge, java21, explicit) |
 | `env/minecraft-secrets.env.example` | Forwarding secret template (deploy generates real file) |
 | `env/minecraft-proxy.env` | Proxy configuration (TYPE, CFG_* vars for velocity.toml) |
 | `env/minecraft-survival.env` | Survival world configuration |
@@ -283,10 +287,12 @@ below the container memory limit to leave room for metaspace and native memory.
 ### Adding a New World
 
 1. Create `env/minecraft-<name>.env` based on an existing env file.
-2. If the world needs different resources, create
-   `quadlet/minecraft@<name>.container.d/20-resources.conf`.
+2. For vanilla worlds, the template handles it automatically.
+   For modded worlds requiring a different Java version, create an explicit
+   `quadlet/minecraft-<name>.container` file referencing the appropriate image.
 3. Run `./scripts/deploy.sh` to reinstall.
-4. Start: `systemctl --user start minecraft@<name>.service`
+4. Start: `systemctl --user start minecraft@<name>.service` (template) or
+   `systemctl --user start minecraft-<name>.service` (explicit)
 5. Add the server to `velocity.toml` template (`[servers]` and `[forced-hosts]`)
    and the corresponding `CFG_SERVER_*` / `CFG_HOST_*` vars to `minecraft-proxy.env`.
 6. Restart the proxy: `systemctl --user restart minecraft-proxy.service`
@@ -304,7 +310,7 @@ check to pass. On failure, it rolls back automatically.
 For manual updates:
 
 ```bash
-podman pull docker.io/itzg/minecraft-server:java21
+podman pull docker.io/itzg/minecraft-server:java25
 systemctl --user restart minecraft@survival.service
 ```
 
@@ -319,8 +325,8 @@ chmod 0600 ~/.config/containers/systemd/minecraft-secrets.env
 systemctl --user restart minecraft-proxy.service
 systemctl --user restart minecraft@survival.service
 systemctl --user restart minecraft@creative.service
-systemctl --user restart minecraft@modded-survival.service
-systemctl --user restart minecraft@modded-creative.service
+systemctl --user restart minecraft-modded-survival.service
+systemctl --user restart minecraft-modded-creative.service
 ```
 
 ### Logs and Debugging

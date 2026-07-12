@@ -1,0 +1,91 @@
+[Unit]
+Description=Minecraft Java Edition - modded-creative (BrainCraft)
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Container]
+# NeoForge requires Java 21 (jdk.crypto.ec module missing from java25 JRE).
+# Podman 5.8 does not support Image= override in template drop-ins, so modded
+# instances use explicit container files instead of the minecraft@.container
+# template.
+Image=minecraft-server-java21.image
+ContainerName=minecraft-modded-creative
+AutoUpdate=registry
+
+Network=minecraft.network
+
+Volume=%h/minecraft/modded-creative:/data:Z
+Volume=%h/quadlets/apps/minecraft/config:/config:ro,Z
+
+UserNS=keep-id:uid=1000,gid=1000
+User=1000
+Group=1000
+
+HealthStartupCmd=pgrep -f java
+HealthStartupInterval=10s
+HealthStartupRetries=0
+HealthStartupSuccess=1
+HealthStartupTimeout=10s
+HealthCmd=/usr/local/bin/mc-health
+HealthInterval=30s
+HealthRetries=5
+HealthStartPeriod=0s
+HealthTimeout=10s
+HealthOnFailure=kill
+Notify=healthy
+
+StopTimeout=190
+
+Memory=7g
+PidsLimit=8192
+Ulimit=nofile=65536:65536
+
+NoNewPrivileges=true
+DropCapability=all
+Mask=/proc/acpi:/proc/kcore:/proc/keys:/proc/latency_stats:/proc/timer_list:/proc/timer_stats:/proc/sched_debug:/proc/scsi:/sys/firmware
+
+HostName=minecraft-modded-creative
+
+LogDriver=journald
+LogOpt=tag=minecraft-modded-creative
+
+Label=app=minecraft
+Label=instance=modded-creative
+Label=managed-by=quadlet
+Annotation=io.containers.description=BrainCraft_Minecraft_modded-creative_Server
+
+EnvironmentFile=%h/.config/containers/systemd/minecraft-secrets.env
+EnvironmentFile=%h/.config/containers/systemd/minecraft-modded-creative.env
+
+Pull=missing
+Retry=3
+RetryDelay=5s
+
+Timezone=America/Los_Angeles
+
+# cgroup v2 direct writes
+# Podman >= 5.9: use CgroupConf= key directly:
+#   CgroupConf=memory.swap.max=0
+#   CgroupConf=memory.high=6300000000
+#   CgroupConf=memory.oom.group=1
+# Podman 5.8: pass via --cgroup-conf flag
+PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=6300000000 --cgroup-conf=memory.oom.group=1
+
+[Quadlet]
+DefaultDependencies=true
+
+[Service]
+Restart=on-failure
+RestartSec=30
+RestartSteps=4
+RestartMaxDelaySec=300
+OOMPolicy=stop
+MemoryHigh=6300M
+MemorySwapMax=0
+TimeoutStartSec=900
+TimeoutStopSec=220
+SyslogIdentifier=minecraft-modded-creative
+CPUWeight=200
+
+[Install]
+WantedBy=default.target

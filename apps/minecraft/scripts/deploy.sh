@@ -9,7 +9,7 @@
 # When Podman ships --application support, replace the "Install quadlet units"
 # section below with:
 #   podman quadlet install --application=minecraft --replace "${APP_DIR}/quadlet/"
-# and remove the manual file copy, drop-in, and config symlink logic.
+# and remove the manual file copy logic.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -64,22 +64,11 @@ done
 # TODO: Replace with `podman quadlet install --application=minecraft --replace "${APP_DIR}/quadlet/"`
 #       when Podman >= 5.9 ships on target hosts (adds --application flag for directory install).
 echo "Installing quadlet units..."
-for unitfile in "${APP_DIR}/quadlet"/*.network "${APP_DIR}/quadlet"/*.image "${APP_DIR}/quadlet"/*.volume "${APP_DIR}/quadlet"/*.container; do
+for unitfile in "${APP_DIR}/quadlet"/*.network "${APP_DIR}/quadlet"/*.image "${APP_DIR}/quadlet"/*.container; do
     [[ -f "$unitfile" ]] || continue
     cp "$unitfile" "${SYSTEMD_DIR}/$(basename "$unitfile")"
     echo "  Installed: $(basename "$unitfile")"
 done
-
-# Install drop-in directories
-echo "Installing drop-in overrides..."
-for dropdir in "${APP_DIR}/quadlet"/*.container.d; do
-    [[ -d "$dropdir" ]] || continue
-    target_dir="${SYSTEMD_DIR}/$(basename "$dropdir")"
-    mkdir -p "$target_dir"
-    cp "$dropdir"/*.conf "$target_dir/" 2>/dev/null || true
-    echo "  Installed: $(basename "$dropdir")/"
-done
-
 
 # Reload systemd
 echo "Reloading systemd user daemon..."
@@ -92,8 +81,8 @@ echo "Start the fleet:"
 echo "  systemctl --user start minecraft-proxy.service"
 echo "  systemctl --user start minecraft@survival.service"
 echo "  systemctl --user start minecraft@creative.service"
-echo "  systemctl --user start minecraft@modded-survival.service"
-echo "  systemctl --user start minecraft@modded-creative.service"
+echo "  systemctl --user start minecraft-modded-survival.service"
+echo "  systemctl --user start minecraft-modded-creative.service"
 echo ""
 echo "Verify:"
 echo "  systemctl --user status minecraft-proxy.service"
