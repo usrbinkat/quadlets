@@ -1,76 +1,128 @@
 # Minecraft Quadlet Fleet
 
-A multi-world Minecraft Java Edition server fleet deployed as rootless Podman
-containers managed by systemd via Quadlet unit files. Players connect to a
-single address and switch between worlds using the Velocity proxy.
-
-## Overview
-
-This repository deploys a complete Minecraft network on a single Linux host:
-a Velocity reverse proxy authenticating players via Mojang, routing them to one
-of four backend worlds — two near-vanilla (Paper) and two heavily modded
-(NeoForge). All containers share a private bridge network, and the proxy is the
-only service exposed to the internet. Configuration is environment-driven,
-secrets are injected at deploy time, and the entire fleet is managed through
-standard systemd commands.
+Multi-world Minecraft Java Edition server fleet deployed as rootless Podman
+containers via systemd Quadlet units. Players connect to a single address
+and switch between worlds through the Velocity proxy.
 
 ## Architecture
 
 ```
 Internet
-  │
-  │ TCP :25565
-  ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│ VM: Fedora 44, rootless Podman, systemd user session (linger)        │
-│                                                                      │
-│  enp1s0 :25565                                                       │
-│    │                                                                 │
-│    ▼ rootlessport (userspace TCP proxy)                              │
-│    │                                                                 │
-│    ▼ minecraft bridge (10.89.100.0/24, aardvark-dns)                 │
-│    │                                                                 │
-│    ├── minecraft-proxy ──────── Velocity JVM                         │
-│    │     online-mode=true       Mojang auth, HmacSHA256 forwarding   │
-│    │     :25565 (only published port)                                │
-│    │       │                                                         │
-│    │       ├── minecraft-survival ─── Paper, survival, normal        │
-│    │       ├── minecraft-creative ─── Paper, creative, peaceful      │
-│    │       ├── minecraft-modded ────────── NeoForge, hard           │
-│    │       └── minecraft-insane ────────── NeoForge, peaceful       │
-│    │           (backends: online-mode=false, no published ports)      │
-│    │                                                                 │
-│    └── DNS: container names resolve via aardvark-dns on bridge       │
-└──────────────────────────────────────────────────────────────────────┘
+  |
+  | TCP :25565
+  v
++----------------------------------------------------------------------+
+| VM: Fedora 44, rootless Podman, systemd user session (linger)        |
+|                                                                      |
+|  enp1s0 :25565                                                       |
+|    |                                                                 |
+|    v rootlessport (userspace TCP proxy)                              |
+|    |                                                                 |
+|    v minecraft bridge (10.89.100.0/24, aardvark-dns)                 |
+|    |                                                                 |
+|    +-- minecraft-proxy ---------- Velocity JVM                       |
+|    |     online-mode=true         Mojang auth, HmacSHA256 forwarding |
+|    |     :25565 (only published port)                                |
+|    |       |                                                         |
+|    |       +-- minecraft-survival --- Paper 26.x, survival, normal   |
+|    |       +-- minecraft-creative --- Paper 26.x, creative, peaceful |
+|    |       +-- minecraft-modded ----- NeoForge 1.21.11, hard         |
+|    |       +-- minecraft-insane ----- NeoForge 1.21.11, peaceful     |
+|    |           (backends: online-mode=false, no published ports)      |
+|    |                                                                 |
+|    +-- DNS: container names resolve via aardvark-dns on bridge       |
++----------------------------------------------------------------------+
 ```
 
 ## Worlds
 
-| World | Server Type | Game Mode | Difficulty | Mods | Connect Via |
-|-------|-------------|-----------|------------|------|-------------|
-| survival | Paper | survival | normal | none | `survival.play.braincraft.io` |
-| creative | Paper | creative | peaceful | none | `creative.play.braincraft.io` |
-| modded | NeoForge | survival | hard | NeoVelocity, Lithium, Spark, Chunky | `modded.play.braincraft.io` |
-| insane | NeoForge | creative | peaceful | NeoVelocity, Lithium, Spark, Chunky | `insane.play.braincraft.io` |
+| World | Type | Mode | Difficulty | Default | Connect Via |
+|-------|------|------|------------|---------|-------------|
+| survival | Paper 26.x | survival | normal | enabled | `survival.play.braincraft.io` |
+| creative | Paper 26.x | creative | peaceful | enabled | `creative.play.braincraft.io` |
+| modded | NeoForge 1.21.11 | survival | hard | disabled | `modded.play.braincraft.io` |
+| insane | NeoForge 1.21.11 | creative | peaceful | disabled | `insane.play.braincraft.io` |
+
+Enabled/disabled state is controlled by `FLEET_*` variables in `.env.example`
+(defaults) and `.env` (user overrides). Disabled worlds are not started, not
+routed by the proxy, and not auto-started on boot.
 
 All worlds share the same whitelist, operator list, and player authentication.
-A player's UUID, skin, and cape are preserved across all worlds via Velocity
-modern forwarding.
+Player UUID, skin, and cape are preserved across worlds via Velocity modern
+forwarding.
+
+## Resource Allocation
+
+| Instance | Container | Heap | memory.high | View | Sim |
+|----------|-----------|------|-------------|------|-----|
+| proxy | 2g | 512m | 1800M | - | - |
+| survival | 12g | 10G | 10800M | 12 | 8 |
+| creative | 12g | 10G | 10800M | 16 | 8 |
+| modded | 12g | 7G | 10800M | 8 | 6 |
+| insane | 12g | 7G | 10800M | 12 | 8 |
+
+Paper worlds allocate 2g container overhead for metaspace, netty, and plugins.
+NeoForge worlds allocate 5g container overhead to accommodate mixin/class
+loading bootstrap peak and AlwaysPreTouch heap page allocation at JVM start.
+
+All containers enforce `memory.swap.max=0` (no swap) and `memory.oom.group=1`
+(atomic cgroup kill on OOM).
+
+**VM sizing:**
+
+| Configuration | VM RAM |
+|---------------|--------|
+| proxy + survival + creative | 28Gi |
+| proxy + all 4 worlds | 52Gi |
+
+## Quick Start
+
+```bash
+git clone https://github.com/usrbinkat/quadlets ~/quadlets
+cd ~/quadlets/apps/minecraft
+
+# Optional: customize fleet settings
+cp .env.example .env
+# edit .env to change FLEET_* flags, memory, timeouts
+
+./scripts/deploy.sh --generate-secret
+./scripts/enable.sh all
+```
+
+## Fleet Configuration
+
+`.env.example` provides defaults. Copy to `.env` to override:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `FLEET_SURVIVAL` | `true` | Enable survival world |
+| `FLEET_CREATIVE` | `true` | Enable creative world |
+| `FLEET_MODDED` | `false` | Enable modded world |
+| `FLEET_INSANE` | `false` | Enable insane world |
+| `FLEET_*_MEMORY` | `12g`/`2g` | Container memory limit per world |
+| `FLEET_STARTUP_TIMEOUT` | `180` | Seconds to wait for health check |
+| `FLEET_POLL_INTERVAL` | `5` | Seconds between health polls |
+
+Scripts source `.env.example` first (defaults), then `.env` (overrides).
+No dependency on direnv — cloud-init and interactive use both work.
 
 ## Player Guide
 
-Add any of the following addresses to your Minecraft Java Edition server list:
+Add to Minecraft server list:
 
 ```
+play.braincraft.io              (connects to survival by default)
 survival.play.braincraft.io
 creative.play.braincraft.io
-modded.play.braincraft.io
-insane.play.braincraft.io
-play.braincraft.io              (connects to survival by default)
+modded.play.braincraft.io       (NeoForge 1.21.11 client required)
+insane.play.braincraft.io       (NeoForge 1.21.11 client required)
 ```
 
-All addresses use port `25565` (the default — no port number needed in the
-client). Once connected, switch worlds at any time with:
+Port 25565 (default). Switch worlds in-game:
 
 ```
 /server survival
@@ -79,182 +131,133 @@ client). Once connected, switch worlds at any time with:
 /server insane
 ```
 
-Modded worlds require the matching NeoForge modpack installed on your client.
-
-## Quick Start
-
-Prerequisites (one-time, handled by VM provisioning):
-
-```bash
-loginctl enable-linger $(whoami)
-podman pull docker.io/itzg/minecraft-server:java25
-podman pull docker.io/itzg/minecraft-server:java21
-podman pull docker.io/itzg/mc-proxy:java25
-```
-
-Deploy:
-
-```bash
-git clone https://github.com/usrbinkat/quadlets /tmp/quadlets
-cd /tmp/quadlets/apps/minecraft
-./scripts/deploy.sh --generate-secret
-```
-
-Start the fleet:
-
-```bash
-systemctl --user start minecraft-proxy.service
-systemctl --user start minecraft@survival.service
-systemctl --user start minecraft@creative.service
-systemctl --user start minecraft-modded.service
-systemctl --user start minecraft-insane.service
-```
-
-Verify:
-
-```bash
-systemctl --user status minecraft-proxy.service
-podman healthcheck run minecraft-proxy
-journalctl --user -t minecraft-proxy -f
-```
+Only enabled worlds are routable. ViaVersion on the proxy handles
+Java Edition version compatibility. Geyser handles Bedrock Edition.
 
 ## How It Works
 
 ### Velocity Proxy
 
-The Velocity proxy is the single entry point for all player connections. It
-handles Mojang authentication (`online-mode=true`), then forwards authenticated
-player data to the appropriate backend using modern forwarding — an HmacSHA256-
-signed payload on the `velocity:player_info` login plugin channel.
+Single entry point for all player connections. Handles Mojang authentication
+(`online-mode=true`), forwards authenticated player data to backends using
+modern forwarding — HmacSHA256-signed payload on the `velocity:player_info`
+login plugin channel.
 
-Players are routed to backends by the hostname they connect with (`[forced-hosts]`
-in `velocity.toml`). If no forced host matches, the player joins the first server
-in the `try` list (survival by default).
-
-Configuration injection uses the itzg/mc-proxy image's `REPLACE_ENV_VARIABLES=TRUE`
-mechanism. The `config/velocity.toml` template contains `${CFG_*}` placeholders
-that are expanded from environment variables at container startup. The processed
-config is written to `/server/velocity.toml` inside the container's persistent
-volume.
-
-The forwarding secret is read by Velocity directly from the `VELOCITY_FORWARDING_SECRET`
-environment variable (checked before the `forwarding-secret-file`). All backends
-must share the same secret.
+`deploy.sh` generates `velocity.toml` from `config/velocity.toml.template`,
+including only `FLEET_*`-enabled worlds in `[servers]` and `[forced-hosts]`.
+The itzg/mc-proxy image expands `${CFG_*}` placeholders from environment
+variables at container startup.
 
 ### Backend Servers
 
-**Paper (survival, creative):** Near-vanilla gameplay. Paper is API-compatible
-with vanilla Minecraft — same world format, same gameplay — with async chunk
-loading, entity optimization, and native Velocity forwarding support. Velocity
-integration is configured via `PATCH_DEFINITIONS`, which patches
-`paper-global.yml` at `$.proxies.velocity.*` with the shared forwarding secret.
+**Paper (survival, creative):** Near-vanilla. Paper provides async chunk
+loading, entity optimization, and native Velocity forwarding. Per-world
+`PATCH_DEFINITIONS` configure velocity integration, anti-xray (survival only),
+and performance tuning (ALTERNATE_CURRENT redstone, chunk unload delay,
+autosave throttling, explosion optimization).
 
-**NeoForge (modded, insane):** Full mod ecosystem. The
-NeoVelocity mod implements the `velocity:player_info` login plugin channel for
-NeoForge, enabling modern forwarding. It is installed automatically via
-`MODRINTH_PROJECTS=neovelocity` and configured via `PATCH_DEFINITIONS`.
+**NeoForge (modded, insane):** NeoVelocity mod implements the
+`velocity:player_info` login plugin channel. Installed via
+`MODRINTH_PROJECTS=neovelocity`, configured via `PATCH_DEFINITIONS`.
 
-All backends run with `ONLINE_MODE=false` — they trust the proxy's forwarding
-data rather than authenticating players directly. `ENFORCE_SECURE_PROFILE=false`
-is required because the TCP connection arrives from the proxy, not the player.
+All backends: `ONLINE_MODE=false` (trust proxy forwarding),
+`ENFORCE_SECURE_PROFILE=false` (connection from proxy, not player).
 
-**Version management:** Vanilla worlds use `VERSION=LATEST` (auto-upgrades on
-restart). Modded worlds use `VERSION_FROM_MODRINTH_PROJECTS=true` — the image
-automatically selects the latest Minecraft version that all listed mods support,
-preventing mod incompatibility after a Minecraft update.
+**Version management:** Paper worlds use `VERSION=LATEST`. NeoForge worlds
+pin `VERSION=1.21.11` — the specific Minecraft version where all listed mods
+have compatible NeoForge builds.
 
-**Idle pause:** All worlds use `PAUSE_WHEN_EMPTY_SECONDS=300`. When no players
-are connected for 5 minutes, the JVM tick loop pauses natively (Minecraft 1.21.2+
-feature). No capabilities, daemons, or kernel packet interception required. The
-tick loop resumes automatically when a player connects (~1 second delay).
+**Idle pause:** `PAUSE_WHEN_EMPTY_SECONDS=300` pauses the tick loop natively
+(Minecraft 1.21.2+) when no players are connected for 5 minutes.
 
 ### Systemd Integration
 
-Quadlet is a systemd generator that converts INI-style `.container`, `.volume`,
-`.network`, and `.image` files into full systemd service units at daemon-reload
-time. The generator injects:
+Quadlet generates systemd service units from `.container`/`.network`/`.image`
+files at daemon-reload time. `.target` is not a supported Quadlet extension —
+`minecraft.target` lives in `~/.config/systemd/user/` separately.
 
-- `Type=notify` + `NotifyAccess=all` (sd-notify integration)
-- `KillMode=mixed` (SIGTERM to main process, SIGKILL to cgroup on timeout)
-- `Delegate=yes` (cgroup delegation for container sub-cgroups)
-- `--cgroups=split` (conmon and container in separate cgroups)
-- `--replace --rm` (idempotent restarts, no stale containers)
-- `ExecStop` / `ExecStopPost` (force-remove container on stop)
-- Dependency injection from `Volume=`, `Network=`, `Image=` references
+Boot auto-start chain: `default.target` → `minecraft.target` →
+`minecraft-proxy.service` → backends (via `BindsTo=` + `After=`).
+Enabled worlds get `WantedBy=minecraft.target` via deploy.sh-generated
+`20-fleet.conf` drop-ins. Disabled worlds have no `[Install]` drop-in and
+are not pulled into the boot transaction.
 
-The backend template `minecraft@.container` is instantiated per world. Systemd
-specifier `%i` expands to the instance name (survival, creative, etc.) in
-container names, hostnames, log tags, volume names, and environment file paths.
+Backend dependency on proxy: `BindsTo=minecraft-proxy.service` stops
+backends when the proxy crashes (not just on explicit stop — `PartOf=`
+only propagates explicit stop/restart, not unexpected deactivation).
+`After=minecraft-proxy.service` ensures backends wait for proxy `READY=1`
+before starting.
 
-Modded instances use dedicated `.container` files (`minecraft-modded.container`,
-`minecraft-insane.container`) with `Image=minecraft-server-java21.image`.
-Paper 26.x requires Java 25; NeoForge requires Java 21 (`jdk.crypto.ec` module).
-Separate container files allow each server type to reference the correct image
-independently.
+Anti-stampede: staggered `RestartSec=` per instance (30/35/40/45s) via
+`30-restart.conf` drop-ins. `RestartRandomizedDelaySec=` requires
+systemd v262; the VM runs v259.
+
+Paper worlds use the `minecraft@.container` template (systemd `%i` specifier).
+NeoForge worlds use explicit container files to reference the java21 image
+(Paper 26.x requires Java 25; NeoForge requires Java 21 for `jdk.crypto.ec`).
 
 ### Health and Lifecycle
 
-**Two-phase health check:** Phase 1 (startup) checks that the JVM process exists
-(`pgrep -f java`). This prevents the ongoing health check from killing the
-container during the 30-120 second JVM startup window. After one successful
-startup check, Phase 2 (ongoing) uses `mc-health` — an RCON-based server list
-ping that validates the server is accepting player connections.
+Two-phase health check: startup phase (`pgrep -f java`) prevents premature
+kill during JVM bootstrap. Ongoing phase (`mc-health` RCON ping) validates
+the server accepts player connections. `Notify=healthy` sends `READY=1` only
+after `mc-health` passes.
 
-**Notify=healthy:** systemd's `READY=1` signal is sent only after `mc-health`
-passes. The service is not considered "active" until the server is actually
-serving players. This is required for reliable auto-update rollback detection.
+Graceful stop: SIGTERM to conmon → forwarded to container PID 1 (itzg
+entrypoint) → RCON `stop` → world save → JVM exits. Quadlet generates
+`ExecStop=podman rm -v -f -i` (not `podman stop`); `podman rm -f` on a
+running container calls `ctr.stop(StopTimeout)` internally.
+`TimeoutStopSec=` covers the full chain including `ExecStopPost=`.
 
-**Graceful stop:** SIGTERM triggers the itzg wrapper to send an RCON `stop`
-command. The JVM saves the world and exits cleanly. `StopTimeout` is set to
-`STOP_DURATION + STOP_SERVER_ANNOUNCE_DELAY + 5s buffer` to ensure the full
-save completes before SIGKILL.
+Restart backoff: `RestartSec=30` → `RestartMaxDelaySec=300` over 4 steps
+(30→53→95→169→300s). After 5 failures in 5 minutes (`StartLimitBurst=5`
+in `StartLimitIntervalSec=300`), the service stops permanently until
+`systemctl --user reset-failed`.
 
-**Auto-update:** `podman auto-update` checks the registry for new image digests.
-If a new image is available, it pulls, restarts the unit, and waits for
-`READY=1`. If the health check never passes (bad image), it rolls back to the
-previous image and restarts again.
+OOM handling: `OOMPolicy=kill` instructs the kernel to kill all processes
+in the cgroup atomically via `memory.oom.group=1`. This overrides the
+`Delegate=yes` implicit default of `OOM_CONTINUE`. Both `stop` and `kill`
+result in `oom-kill` failed state and trigger `Restart=on-failure`.
+`ManagedOOMMemoryPressure=kill` enables proactive `systemd-oomd`
+intervention before the kernel OOM killer fires.
 
-**Restart backoff:** On failure, restarts use exponential backoff
-(`RestartSec=30` → `RestartMaxDelaySec=300` over 4 steps). After 5 failures in
-5 minutes (`StartLimitBurst=5`), the service stops restarting permanently until
-manual intervention.
-
-**OOM handling:** `memory.high` throttles the JVM into GC pressure before the
-hard limit. If `memory.max` is breached, the kernel OOM-kills the container.
-`OOMPolicy=stop` ensures systemd immediately marks the service failed and
-triggers `Restart=on-failure`. `memory.oom.group=1` (on backends) ensures atomic
-cgroup kill — no partially-dead JVM state.
+Swap: `memory.swap.max=0` is set at both cgroup layers — `MemorySwapMax=0`
+in `[Service]` (service cgroup) and `--cgroup-conf=memory.swap.max=0` via
+`PodmanArgs=` (container sub-cgroup). cgroup v2 `memory.swap.max` is not
+inherited by sub-cgroups; without the `PodmanArgs=` layer, Podman's
+`LimitToSwap()` sets implicit swap equal to `Memory=`.
 
 ## File Reference
 
 | File | Purpose |
 |------|---------|
-| `quadlet/minecraft.network` | Podman bridge network (10.89.100.0/24, DNS enabled) |
-| `quadlet/minecraft-server.image` | Vanilla backend image pre-pull (itzg/minecraft-server:java25) |
-| `quadlet/minecraft-server-java21.image` | Modded backend image pre-pull (itzg/minecraft-server:java21) |
-| `quadlet/minecraft-proxy.image` | Proxy image pre-pull (itzg/mc-proxy:java25) |
-| `quadlet/minecraft-proxy.container` | Velocity proxy unit (only published port) |
-| `quadlet/minecraft@.container` | Vanilla backend server template (Paper, java25) |
-| `quadlet/minecraft-modded.container` | Modded survival (NeoForge, java21) |
-| `quadlet/minecraft-insane.container` | Insane creative (NeoForge, java21) |
-| `env/minecraft-secrets.env.example` | Forwarding secret template (deploy generates real file) |
-| `env/minecraft-proxy.env` | Proxy configuration (TYPE, CFG_* vars for velocity.toml) |
-| `env/minecraft-survival.env` | Survival world configuration |
-| `env/minecraft-creative.env` | Creative world configuration |
-| `env/minecraft-modded.env` | Modded survival configuration |
-| `env/minecraft-insane.env` | Insane creative configuration |
-| `config/velocity.toml` | Velocity config template (${CFG_*} placeholders) |
-| `config/patches/paper-velocity.json` | PATCH_DEFINITIONS for Paper velocity support |
-| `config/patches/neovelocity.json` | PATCH_DEFINITIONS for NeoForge forwarding (NeoVelocity) |
-| `scripts/deploy.sh` | Deployment automation (install + secret generation) |
-| `scripts/start.sh` | Fleet start/stop/restart orchestration |
-| `scripts/generate-secret.sh` | Forwarding secret generator |
+| `.env.example` | Fleet configuration defaults (FLEET_* flags, memory, timeouts) |
+| `.envrc` | direnv integration — sources .env.example then .env |
+| `config/velocity.toml.template` | Velocity config template (${CFG_*} placeholders) |
+| `config/velocity.toml` | Generated by deploy.sh from template + FLEET_* flags |
+| `config/patches/` | Shared patch files (symlink targets) |
+| `config/survival/patches/` | Survival-specific patches (velocity, antixray, performance, spigot) |
+| `config/creative/patches/` | Creative-specific patches (velocity, performance; no antixray) |
+| `config/modded/patches/` | Modded patches (neovelocity) |
+| `config/insane/patches/` | Insane patches (neovelocity) |
+| `quadlet/minecraft@.container` | Paper backend template (java25) |
+| `quadlet/minecraft-modded.container` | NeoForge modded (java21) |
+| `quadlet/minecraft-insane.container` | NeoForge insane (java21) |
+| `quadlet/minecraft-proxy.container` | Velocity proxy (only published port) |
+| `quadlet/minecraft.network` | Podman bridge network (10.89.100.0/24) |
+| `env/minecraft-*.env` | Per-world environment configuration |
+| `env/minecraft-secrets.env.example` | Forwarding secret template |
+| `systemd/minecraft.target` | Fleet grouping unit (installed to ~/.config/systemd/user/) |
+| `scripts/deploy.sh` | Install units, generate drop-ins/velocity.toml, download plugins |
+| `scripts/enable.sh` | Start/stop fleet services with health verification |
+| `scripts/generate-secret.sh` | Generate HmacSHA256 forwarding secret |
+| `scripts/hangar-download.sh` | Download Hangar plugins for Paper worlds |
 
 ## Configuration Reference
 
 ### Secrets
 
-The file `minecraft-secrets.env` is deployed with `0600` permissions and contains
+`minecraft-secrets.env` is deployed with `0600` permissions and contains
 three variables that must all hold the same value:
 
 | Variable | Consumer | Mechanism |
@@ -263,39 +266,68 @@ three variables that must all hold the same value:
 | `VELOCITY_FORWARDING_SECRET` | Velocity JVM reads via `System.getenv()` | Direct |
 | `CFG_VELOCITY_SECRET` | PATCH_DEFINITIONS `${CFG_VELOCITY_SECRET}` expansion | File patching |
 
-Three variables exist because `EnvironmentFile=` does not perform shell variable
-expansion. Each consumer reads a differently-named variable through a different
-mechanism. All three must be identical. Rotate by editing the file and restarting
-all services.
+Three variables exist because `EnvironmentFile=` does not perform shell
+variable expansion. Each consumer reads a differently-named variable through
+a different mechanism. All three must be identical.
 
-### Resource Limits
+### Systemd Generator
 
-| Instance | Memory (container) | memory.high | PidsLimit | CPUWeight | StopTimeout |
-|----------|-------------------|-------------|-----------|-----------|-------------|
-| proxy | 1g | 900m | 512 | 150 | 30s |
-| survival | 5g | 4500m | 4096 | 100 | 130s |
-| creative | 5g | 4500m | 4096 | 100 | 130s |
-| modded | 7g | 6300m | 8192 | 200 | 190s |
-| insane | 7g | 6300m | 8192 | 200 | 190s |
+Quadlet injects into each generated service unit:
 
-All containers have `memory.swap.max=0` (no swap) and `memory.oom.group=1`
-(atomic cgroup kill on OOM). The JVM heap (`MAX_MEMORY` in env files) must be
-below the container memory limit to leave room for metaspace and native memory.
+- `Type=notify` + `NotifyAccess=all` (sd-notify integration)
+- `KillMode=mixed` (SIGTERM to main process, SIGKILL to cgroup on timeout)
+- `Delegate=yes` (cgroup delegation for container sub-cgroups)
+- `--cgroups=split` (conmon and container in separate cgroups)
+- `--replace --rm` (idempotent restarts, no stale containers)
+- `ExecStop=podman rm -v -f -i <name>` (force-remove, not `podman stop`)
+- `ExecStopPost=-podman rm -v -f -i <name>` (cleanup if conmon killed)
+- Dependency injection from `Volume=`, `Network=`, `Image=` references
 
 ## Operations
+
+### Enabling/Disabling Worlds
+
+```bash
+# Edit .env to change FLEET_* flags
+vim .env
+
+# Redeploy (regenerates velocity.toml, enables/disables systemd units)
+./scripts/deploy.sh
+
+# Restart fleet
+./scripts/enable.sh all
+```
+
+### Starting a Single World
+
+```bash
+./scripts/enable.sh survival
+./scripts/enable.sh insane    # ignores FLEET_* flag, starts unconditionally
+```
+
+### Rotating the Forwarding Secret
+
+```bash
+./scripts/generate-secret.sh > ~/.config/containers/systemd/minecraft-secrets.env
+chmod 0600 ~/.config/containers/systemd/minecraft-secrets.env
+./scripts/enable.sh all
+```
 
 ### Adding a New World
 
 1. Create `env/minecraft-<name>.env` based on an existing env file.
-2. For vanilla worlds, the template handles it automatically.
-   For modded worlds requiring a different Java version, create an explicit
-   `quadlet/minecraft-<name>.container` file referencing the appropriate image.
-3. Run `./scripts/deploy.sh` to reinstall.
-4. Start: `systemctl --user start minecraft@<name>.service` (template) or
-   `systemctl --user start minecraft-<name>.service` (explicit)
-5. Add the server to `velocity.toml` template (`[servers]` and `[forced-hosts]`)
-   and the corresponding `CFG_SERVER_*` / `CFG_HOST_*` vars to `minecraft-proxy.env`.
-6. Restart the proxy: `systemctl --user restart minecraft-proxy.service`
+2. Create `config/<name>/patches/` with symlinks to shared patches and any
+   world-specific patches.
+3. For Paper worlds, the `minecraft@.container` template handles it. For
+   NeoForge worlds requiring java21, create an explicit
+   `quadlet/minecraft-<name>.container` referencing `minecraft-server-java21.image`
+   with `BindsTo=minecraft-proxy.service`, `After=minecraft-proxy.service`,
+   `Wants=minecraft-proxy.service` in `[Unit]`.
+4. Add `FLEET_<NAME>=false` and `FLEET_<NAME>_MEMORY=12g` to `.env.example`.
+5. Add `CFG_SERVER_<NAME>` and `CFG_HOST_<NAME>` to `minecraft-proxy.env`.
+6. Add the server and forced-host entries to `config/velocity.toml.template`.
+7. Add the world to `DROPIN_MAP` and `RESTART_SEC` in `deploy.sh`.
+8. Run `./scripts/deploy.sh` to install.
 
 ### Updating Images
 
@@ -303,64 +335,49 @@ below the container memory limit to leave room for metaspace and native memory.
 podman auto-update
 ```
 
-This checks registry digests for all containers with `AutoUpdate=registry`. If
-a new image is found, it pulls, restarts the service, and waits for the health
-check to pass. On failure, it rolls back automatically.
+Checks registry digests for all containers with `AutoUpdate=registry`. Pulls
+new images, restarts units, waits for health check. Rolls back automatically
+on health check failure.
 
-For manual updates:
+Manual update:
 
 ```bash
 podman pull docker.io/itzg/minecraft-server:java25
 systemctl --user restart minecraft@survival.service
 ```
 
-### Rotating the Forwarding Secret
-
-```bash
-# Generate new secret
-./scripts/generate-secret.sh > ~/.config/containers/systemd/minecraft-secrets.env
-chmod 0600 ~/.config/containers/systemd/minecraft-secrets.env
-
-# Restart everything (all services must share the same secret)
-systemctl --user restart minecraft-proxy.service
-systemctl --user restart minecraft@survival.service
-systemctl --user restart minecraft@creative.service
-systemctl --user restart minecraft-modded.service
-systemctl --user restart minecraft-insane.service
-```
-
 ### Logs and Debugging
 
 ```bash
-# Per-instance logs via journal tag
+# Per-instance logs
 journalctl --user -t minecraft-survival -f
 journalctl --user -t minecraft-proxy -f
 
-# Health check status
+# Health check
 podman healthcheck run minecraft-proxy
 podman healthcheck run minecraft-survival
 
-# Inspect generated systemd unit (dry-run)
+# Inspect generated systemd unit
 QUADLET_UNIT_DIRS=~/.config/containers/systemd \
   /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
 
 # Validate generated service
 systemd-analyze --user --generators=true verify minecraft@survival.service
 
-# Confirm parsed values
+# Confirm parsed resource values
 systemctl --user show minecraft@survival.service \
   -P MemoryHigh -P MemoryMax -P MemorySwapMax -P OOMPolicy -P CPUWeight
 ```
 
 ## Requirements
 
-- **OS:** Fedora 44+ (kernel ≥ 6.5 for sdnotify attribution via SO_PASSPIDFD)
-- **Container runtime:** Podman 5.x+ (Quadlet generator, CgroupConf=, pasta networking)
-- **Init:** systemd 254+ (RestartSteps=, Delegate=yes .control subcgroup, OOMPolicy=)
-- **Session:** `loginctl enable-linger` enabled for the deploying user
-- **RAM:** 16Gi minimum for proxy + 2 vanilla worlds; 32Gi recommended for all 4 worlds simultaneous
-- **CPU:** 4+ cores (8 threads recommended for modded worlds under load)
-- **Storage:** 64Gi+ root disk (container images, world data in ~/minecraft/)
+- **OS:** Fedora 44+ (kernel >= 6.5)
+- **Container runtime:** Podman 5.x+
+- **Init:** systemd 259+ (RestartSteps=, OOMPolicy=kill, ManagedOOMMemoryPressure=)
+- **Session:** `loginctl enable-linger` enabled
+- **RAM:** 28Gi for proxy + 2 Paper worlds; 52Gi for all 4 worlds
+- **CPU:** 4+ cores
+- **Storage:** 64Gi+ root disk
 
 Built on [itzg/docker-minecraft-server](https://github.com/itzg/docker-minecraft-server),
 [itzg/docker-bungeecord](https://github.com/itzg/docker-bungeecord) (mc-proxy),

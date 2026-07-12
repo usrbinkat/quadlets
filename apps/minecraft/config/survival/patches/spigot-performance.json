@@ -1,0 +1,26 @@
+{
+  "file": "/data/spigot.yml",
+  "ops": [
+    {
+      "$set": {
+        "path": "$.world-settings.default.entity-activation-range.animals",
+        "value": "24",
+        "value-type": "int"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.world-settings.default.merge-radius.exp",
+        "value": "3.0",
+        "value-type": "float"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.world-settings.default.merge-radius.item",
+        "value": "2.5",
+        "value-type": "float"
+      }
+    }
+  ]
+}

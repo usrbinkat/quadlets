@@ -1,0 +1,59 @@
+{
+  "file": "/data/config/paper-world-defaults.yml",
+  "ops": [
+    {
+      "$set": {
+        "path": "$.chunks.delay-chunk-unloads-by",
+        "value": "30s"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.chunks.prevent-moving-into-unloaded-chunks",
+        "value": "true",
+        "value-type": "bool"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.chunks.max-auto-save-chunks-per-tick",
+        "value": "12",
+        "value-type": "int"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.environment.optimize-explosions",
+        "value": "true",
+        "value-type": "bool"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.misc.redstone-implementation",
+        "value": "ALTERNATE_CURRENT"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.misc.update-pathfinding-on-block-update",
+        "value": "false",
+        "value-type": "bool"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.fixes.fix-items-merging-through-walls",
+        "value": "true",
+        "value-type": "bool"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.unsupported-settings.disable-world-ticking-when-empty",
+        "value": "true",
+        "value-type": "bool"
+      }
+    }
+  ]
+}

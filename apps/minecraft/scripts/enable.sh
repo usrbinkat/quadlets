@@ -1,38 +1,45 @@
 #!/usr/bin/env bash
-# Start the Minecraft fleet with clean state.
-# Usage: ./start.sh [proxy|survival|creative|modded|insane|all]
+# Enable and start Minecraft fleet services.
+# Usage: ./enable.sh [proxy|survival|creative|modded|insane|all]
 #
-# Every action is timestamped. Every condition is checked explicitly.
-# On success: reports loaded plugins/mods, startup duration, health status.
-# On failure: reports which stage failed, dumps journal logs, lists installed artifacts.
+# Reads fleet configuration from .env.example (defaults) then .env (overrides).
+# FLEET_SURVIVAL, FLEET_CREATIVE, FLEET_MODDED, FLEET_INSANE control which
+# worlds are started when invoked with "all". Individual targets ignore the
+# FLEET_* flags and start unconditionally.
+#
+# On success: reports loaded plugins/mods, startup duration, health, memory.
+# On failure: reports which stage failed, dumps journal, lists installed artifacts.
 set -euxo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Source fleet config: defaults first, then user overrides
+set -a
+[[ -f "${APP_DIR}/.env.example" ]] && . "${APP_DIR}/.env.example"
+[[ -f "${APP_DIR}/.env" ]] && . "${APP_DIR}/.env"
+set +a
 
 TARGET="${1:-all}"
 FAILURES=0
-STARTUP_TIMEOUT=180
-POLL_INTERVAL=5
+STARTUP_TIMEOUT="${FLEET_STARTUP_TIMEOUT:-180}"
+POLL_INTERVAL="${FLEET_POLL_INTERVAL:-5}"
 
-BACKEND_SERVICES=(
-    minecraft@survival.service
-    minecraft@creative.service
-    # minecraft-modded.service  # disabled until larger hardware; start individually with ./start.sh modded
-    minecraft-insane.service
-)
-
-ALL_SERVICES=(
-    minecraft-proxy.service
-    "${BACKEND_SERVICES[@]}"
+# Orphan units from prior naming schemes — always cleaned up
+ORPHAN_SERVICES=(
+    minecraft-modded-creative.service
+    minecraft-modded-survival.service
 )
 
 ts() { date '+%H:%M:%S'; }
 
 resolve_service() {
     case "$1" in
-        proxy)            echo "minecraft-proxy.service" ;;
+        proxy)             echo "minecraft-proxy.service" ;;
         survival|creative) echo "minecraft@${1}.service" ;;
-        modded)           echo "minecraft-modded.service" ;;
-        insane)           echo "minecraft-insane.service" ;;
-        *) return 1 ;;
+        modded)            echo "minecraft-modded.service" ;;
+        insane)            echo "minecraft-insane.service" ;;
+        *) echo "Unknown target: $1" >&2; return 1 ;;
     esac
 }
 
@@ -40,16 +47,35 @@ service_to_container() {
     echo "$1" | sed 's/\.service$//' | sed 's/@/-/'
 }
 
-# Determine data directory for this service
 service_to_datadir() {
     local svc="$1"
     case "$svc" in
-        minecraft-proxy.service)       echo "${HOME}/minecraft/proxy" ;;
-        minecraft@survival.service)    echo "${HOME}/minecraft/survival" ;;
-        minecraft@creative.service)    echo "${HOME}/minecraft/creative" ;;
-        minecraft-modded.service)      echo "${HOME}/minecraft/modded" ;;
-        minecraft-insane.service)      echo "${HOME}/minecraft/insane" ;;
+        minecraft-proxy.service)    echo "${HOME}/minecraft/proxy" ;;
+        minecraft@survival.service) echo "${HOME}/minecraft/survival" ;;
+        minecraft@creative.service) echo "${HOME}/minecraft/creative" ;;
+        minecraft-modded.service)   echo "${HOME}/minecraft/modded" ;;
+        minecraft-insane.service)   echo "${HOME}/minecraft/insane" ;;
     esac
+}
+
+# Build the list of enabled backend services from FLEET_* vars
+build_backend_services() {
+    local services=()
+    [[ "${FLEET_SURVIVAL:-false}" == "true" ]] && services+=(minecraft@survival.service)
+    [[ "${FLEET_CREATIVE:-false}" == "true" ]] && services+=(minecraft@creative.service)
+    [[ "${FLEET_MODDED:-false}" == "true" ]]   && services+=(minecraft-modded.service)
+    [[ "${FLEET_INSANE:-false}" == "true" ]]   && services+=(minecraft-insane.service)
+    echo "${services[@]}"
+}
+
+# Build the list of disabled backend services (to stop if running)
+build_disabled_services() {
+    local services=()
+    [[ "${FLEET_SURVIVAL:-false}" != "true" ]] && services+=(minecraft@survival.service)
+    [[ "${FLEET_CREATIVE:-false}" != "true" ]] && services+=(minecraft@creative.service)
+    [[ "${FLEET_MODDED:-false}" != "true" ]]   && services+=(minecraft-modded.service)
+    [[ "${FLEET_INSANE:-false}" != "true" ]]   && services+=(minecraft-insane.service)
+    echo "${services[@]}"
 }
 
 dump_failure() {
@@ -92,7 +118,6 @@ report_success() {
     echo "  [$(ts)] Stage 3: healthy — accepting connections (${elapsed}s)"
     echo ""
 
-    # Report loaded artifacts
     if [[ -d "${datadir}/plugins" ]]; then
         local count
         count=$(ls -1 "${datadir}/plugins/"*.jar 2>/dev/null | wc -l)
@@ -106,7 +131,6 @@ report_success() {
         ls -1 "${datadir}/mods/"*.jar 2>/dev/null | while read -r f; do echo "    $(basename "$f")"; done
     fi
 
-    # Memory
     local mem
     mem=$(podman stats --no-stream --format '{{.MemUsage}}' "$container" 2>/dev/null || echo "unknown")
     echo "  Memory: ${mem}"
@@ -122,12 +146,10 @@ start_and_verify() {
 
     echo "=== ${svc} ==="
 
-    # Stop any previous instance
     echo "  [$(ts)] Stopping previous instance..."
     systemctl --user stop "${svc}" 2>/dev/null || true
     systemctl --user reset-failed "${svc}" 2>/dev/null || true
 
-    # Stage 1: systemd start (container creation)
     echo "  [$(ts)] Stage 1: starting systemd unit..."
     if ! systemctl --user start "${svc}"; then
         echo "  [$(ts)] STAGE 1 FAILED: systemd could not start the unit"
@@ -137,12 +159,10 @@ start_and_verify() {
     fi
     echo "  [$(ts)] Stage 1: unit started, container created"
 
-    # Stage 2+3: poll for JVM process and health
     local elapsed=0
     local jvm_seen=false
 
     while [[ $elapsed -lt $STARTUP_TIMEOUT ]]; do
-        # Check unit still alive
         if ! systemctl --user is-active "${svc}" &>/dev/null; then
             local now
             now=$(date +%s)
@@ -153,7 +173,6 @@ start_and_verify() {
             return 1
         fi
 
-        # Check JVM process inside container
         if [[ "$jvm_seen" == "false" ]]; then
             if podman exec "$container" pgrep -f "java\|velocity" &>/dev/null 2>&1; then
                 local now
@@ -164,7 +183,6 @@ start_and_verify() {
             fi
         fi
 
-        # Check container health status
         local health
         health=$(podman inspect --format '{{.State.Health.Status}}' "$container" 2>/dev/null || echo "none")
 
@@ -179,7 +197,6 @@ start_and_verify() {
         sleep "$POLL_INTERVAL"
     done
 
-    # Timeout
     local now
     now=$(date +%s)
     elapsed=$((now - start_time))
@@ -206,7 +223,35 @@ case "${TARGET}" in
         start_and_verify "${svc}"
         ;;
     all)
-        echo "[$(ts)] === Stopping fleet ==="
+        echo "[$(ts)] === Fleet configuration ==="
+        echo "  FLEET_SURVIVAL=${FLEET_SURVIVAL:-false}"
+        echo "  FLEET_CREATIVE=${FLEET_CREATIVE:-false}"
+        echo "  FLEET_MODDED=${FLEET_MODDED:-false}"
+        echo "  FLEET_INSANE=${FLEET_INSANE:-false}"
+        echo ""
+
+        # Clean up orphan units from prior naming schemes
+        echo "[$(ts)] === Cleaning orphan units ==="
+        for orphan in "${ORPHAN_SERVICES[@]}"; do
+            systemctl --user stop "${orphan}" 2>/dev/null || true
+            systemctl --user disable "${orphan}" 2>/dev/null || true
+        done
+
+        # Stop disabled services that may be running from a prior config
+        read -ra DISABLED_SERVICES <<< "$(build_disabled_services)"
+        if [[ ${#DISABLED_SERVICES[@]} -gt 0 ]]; then
+            echo "[$(ts)] === Stopping disabled services ==="
+            for svc in "${DISABLED_SERVICES[@]}"; do
+                systemctl --user stop "${svc}" 2>/dev/null || true
+                echo "  Stopped: ${svc}"
+            done
+        fi
+
+        # Build enabled service list
+        read -ra BACKEND_SERVICES <<< "$(build_backend_services)"
+        ALL_SERVICES=(minecraft-proxy.service "${BACKEND_SERVICES[@]}")
+
+        echo "[$(ts)] === Stopping enabled services ==="
         systemctl --user stop "${ALL_SERVICES[@]}" 2>/dev/null || true
         systemctl --user reset-failed 2>/dev/null || true
         echo ""

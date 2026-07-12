@@ -1,50 +1,55 @@
-# Survival World Plugins
+# Survival World — Paper 26.x Plugins
 
-Faithful vanilla with QoL enhancements. Stakes matter. The default world
-players join when connecting to `play.braincraft.io`.
+Near-vanilla survival with quality-of-life plugins. Normal difficulty,
+PvP enabled, grief protection via land claims. Default world for
+`play.braincraft.io`.
 
-**Persona:** Players who want real Minecraft with friends. PvP on, normal
-difficulty, grief protection, land claims. A world that feels cared for.
+## Installed Plugins
 
-## Plugins
+Modrinth plugins (installed automatically via `MODRINTH_PROJECTS`):
 
-### Core Infrastructure
+| Plugin | Purpose |
+|--------|---------|
+| EssentialsX | Homes, warps, /tpa, spawn, kits |
+| CoreProtect | Block logging, rollback, anti-grief forensics |
+| GriefPrevention | Player land claims with golden shovel |
+| LibertyBans | Ban/mute/kick management |
+| Chunky | World pre-generation |
+| GSit | Sit on stairs, slabs, carpets |
+| FancyHolograms | Display entity holograms for signage |
+| BlueMap | 3D web map |
+| ToolStats | Tracks blocks mined, kills, ownership on tools |
+| WorldEdit | Region select, copy, paste, fill |
+| SleepSkipUltra | Smooth night skip with sunrise transition |
 
-| Plugin | Purpose | Source | Version |
-|--------|---------|--------|---------|
-| EssentialsX | Homes, warps, /tpa, spawn, kits | [GitHub](https://github.com/EssentialsX/Essentials) | 2.22.0 |
-| CoreProtect | Block logging, rollback, anti-grief | [GitHub](https://github.com/PlayPro/CoreProtect) | 24.0 |
-| GriefPrevention | Player land claims with golden shovel | [GitHub](https://github.com/GriefPrevention/GriefPrevention) | 16.18.7 |
-| LibertyBans | Ban/mute/kick management | [GitHub](https://github.com/A248/LibertyBans) | 1.1.3 |
-| LuckPerms | Per-world permission groups | [GitHub](https://github.com/LuckPerms/LuckPerms) | latest |
-| Chunky | World pre-generation | [GitHub](https://github.com/pop4959/Chunky) | latest |
+Hangar plugins (installed by `scripts/hangar-download.sh` during deploy):
 
-### Performance
+| Plugin | Purpose |
+|--------|---------|
+| ChestSort | Shift-click to sort containers |
 
-| Feature | Source | Notes |
-|---------|--------|-------|
-| Paper anti-xray | Built-in | Configure in `paper-global.yml` `anticheat.anti-xray` |
-| Spark | Built-in Paper 26.x | Profiler, `/spark` command |
+## Performance Patches
 
-### Vanilla Enhancement — "hits you in the feels"
+Applied via `PATCH_DEFINITIONS=/config/survival/patches`:
 
-| Plugin | Purpose | Source | Version |
-|--------|---------|--------|---------|
-| mcMMO | RPG skills (mining, fishing, combat, etc.) | [GitHub](https://github.com/mcMMO-Dev/mcMMO) | 2.2.053+ |
-| DoubleDoors | Adjacent doors open/close together | [Modrinth](https://modrinth.com/plugin/doubledoors) | 1.4 |
-| SleepSkipUltra | Smooth night skip with sunrise transition | [Modrinth](https://modrinth.com/plugin/sleepskipultra) | 1.7 |
-| ChestSort | Shift-click to sort containers | [Hangar](https://hangar.papermc.io/UrAvgCode/chestsort) | latest |
-| HarvestMaster | Right-click harvest and auto-replant | [Hangar](https://hangar.papermc.io/Imperialroma10/HarvestMaster) | latest |
-| GSit | Sit on stairs, slabs, carpets | [GitHub](https://github.com/Gecolay/GSit) | latest |
-| ToolStats | Track blocks mined, kills, ownership | [Codeberg](https://codeberg.org/hyperdefined/ToolStats) | 2.0.4 |
-| FancyHolograms | Display entity holograms for signage | [GitHub](https://github.com/FancyMcPlugins/FancyHolograms) | 2.10.0 |
+| Patch | Target | Settings |
+|-------|--------|----------|
+| paper-velocity.json | paper-global.yml | Velocity modern forwarding enabled |
+| paper-antixray.json | paper-world-defaults.yml | Anti-xray engine mode 1, max height 64 |
+| paper-performance.json | paper-world-defaults.yml | ALTERNATE_CURRENT redstone, chunk unload delay 30s, prevent moving into unloaded chunks, autosave 12 chunks/tick, optimize explosions, disable pathfinding on block update, fix items merging through walls, disable world ticking when empty |
+| spigot-performance.json | spigot.yml | Entity activation range animals 24, merge radius exp 3.0, merge radius item 2.5 |
 
-### Map
+## Resource Allocation
 
-| Plugin | Purpose | Source | Version |
-|--------|---------|--------|---------|
-| BlueMap | 3D web map of the world | [GitHub](https://github.com/BlueMap-Minecraft/BlueMap) | 5.18+ |
+| Setting | Value |
+|---------|-------|
+| Container memory | 12g |
+| JVM heap | 10G |
+| memory.high | 10800M |
+| View distance | 12 chunks |
+| Simulation distance | 8 chunks |
 
 ## Player Requirements
 
-None. All plugins are server-side only. Join with vanilla Minecraft 26.1.2.
+None. All plugins are server-side. Join with vanilla Minecraft Java Edition.
+ViaVersion on the proxy handles version compatibility.

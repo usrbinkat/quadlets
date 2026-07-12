@@ -1,5 +1,8 @@
 [Unit]
 Description=Minecraft Java Edition - modded (BrainCraft)
+BindsTo=minecraft-proxy.service
+After=minecraft-proxy.service
+Wants=minecraft-proxy.service
 StartLimitIntervalSec=300
 StartLimitBurst=5
 
@@ -35,7 +38,7 @@ Notify=healthy
 
 StopTimeout=190
 
-Memory=7g
+Memory=12g
 PidsLimit=8192
 Ulimit=nofile=65536:65536
 
@@ -65,10 +68,10 @@ Timezone=America/Los_Angeles
 # cgroup v2 direct writes
 # Podman >= 5.9: use CgroupConf= key directly:
 #   CgroupConf=memory.swap.max=0
-#   CgroupConf=memory.high=6300000000
+#   CgroupConf=memory.high=10800000000
 #   CgroupConf=memory.oom.group=1
 # Podman 5.8: pass via --cgroup-conf flag
-PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=6300000000 --cgroup-conf=memory.oom.group=1
+PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=10800000000 --cgroup-conf=memory.oom.group=1
 
 [Quadlet]
 DefaultDependencies=true
@@ -78,13 +81,13 @@ Restart=on-failure
 RestartSec=30
 RestartSteps=4
 RestartMaxDelaySec=300
-OOMPolicy=stop
-MemoryHigh=6300M
+OOMPolicy=kill
+ManagedOOMMemoryPressure=kill
+MemoryHigh=10800M
 MemorySwapMax=0
 TimeoutStartSec=900
 TimeoutStopSec=220
 SyslogIdentifier=minecraft-modded
 CPUWeight=200
 
-[Install]
-WantedBy=default.target
+# [Install] WantedBy= managed by deploy.sh via 20-fleet.conf drop-in.

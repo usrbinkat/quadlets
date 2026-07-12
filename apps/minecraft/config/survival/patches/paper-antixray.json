@@ -1,0 +1,47 @@
+{
+  "file": "/data/config/paper-world-defaults.yml",
+  "ops": [
+    {
+      "$set": {
+        "path": "$.anticheat.anti-xray.enabled",
+        "value": "true",
+        "value-type": "bool"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.anticheat.anti-xray.engine-mode",
+        "value": "1",
+        "value-type": "int"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.anticheat.anti-xray.max-block-height",
+        "value": "64",
+        "value-type": "int"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.anticheat.anti-xray.update-radius",
+        "value": "2",
+        "value-type": "int"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.anticheat.anti-xray.lava-obscures",
+        "value": "false",
+        "value-type": "bool"
+      }
+    },
+    {
+      "$set": {
+        "path": "$.anticheat.anti-xray.use-permission",
+        "value": "false",
+        "value-type": "bool"
+      }
+    }
+  ]
+}

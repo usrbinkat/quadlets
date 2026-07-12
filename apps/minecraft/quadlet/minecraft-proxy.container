@@ -74,7 +74,8 @@ Restart=on-failure
 RestartSec=10
 RestartSteps=4
 RestartMaxDelaySec=120
-OOMPolicy=stop
+OOMPolicy=kill
+ManagedOOMMemoryPressure=kill
 TimeoutStartSec=300
 TimeoutStopSec=45
 SyslogIdentifier=minecraft-proxy
@@ -82,5 +83,5 @@ CPUWeight=150
 MemoryHigh=1800M
 MemorySwapMax=0
 
-[Install]
-WantedBy=default.target
+# [Install] WantedBy= managed by deploy.sh via 20-fleet.conf drop-in.
+# Proxy always gets WantedBy=minecraft.target.

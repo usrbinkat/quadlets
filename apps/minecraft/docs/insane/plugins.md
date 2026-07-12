@@ -1,55 +1,55 @@
-# Insane World — NeoForge Mods
+# Insane World — NeoForge 1.21.11 Mods
 
-An 11-year-old's dream world. NeoForge 1.21.8. Peaceful creative mode.
-Imagination, chaos, mad science, goober engineering. Anything goes.
+Creative mode with NeoForge performance mods. Peaceful difficulty, flight,
+command blocks, max build height 1024. Disabled by default
+(`FLEET_INSANE=false`); requires VM scaling to 52Gi.
 
-**Persona:** The playground/laboratory. Full NeoForge creative with flight,
-command blocks, max build height. Things built here can be voted for
-copy/paste into the modded survival world.
+## Installed Mods
 
-## Server-Side Performance Mods (no client install)
+All mods installed automatically via `MODRINTH_PROJECTS` with
+`MODRINTH_PROJECTS_DEFAULT_VERSION_TYPE=alpha`.
 
-| Mod | Purpose | Source | Version |
-|-----|---------|--------|---------|
-| Lithium | Tick optimization | [GitHub](https://github.com/CaffeineMC/lithium) | latest |
-| Spark | Performance profiler | [GitHub](https://github.com/lucko/spark) | latest |
-| FerriteCore | Memory optimization | [GitHub](https://github.com/malte0811/FerriteCore) | 8.0.4 |
-| ModernFix-mVUS | Startup and memory optimization | [GitHub](https://github.com/coredex-source/ModernFix---mVUS) | 5.20.4 |
-| C2ME | Parallel chunk generation | [GitHub](https://github.com/RelativityMC/C2ME-neoforge) | 0.3.5+alpha.0.70 |
-| Alternate Current | Efficient redstone | [GitHub](https://github.com/SpaceWalkerRS/alternate-current) | 1.9.0 |
-| Chunky | World pre-generation | [Modrinth](https://modrinth.com/mod/chunky) | latest |
+### Performance (server-side, no client install)
 
-## Server-Side Infrastructure Mods (no client install)
+| Mod | Purpose |
+|-----|---------|
+| Lithium | Tick optimization |
+| Spark | Performance profiler |
+| FerriteCore | Memory optimization |
+| ModernFix-mVUS | Startup time and memory optimization |
+| C2ME | Parallel chunk generation |
+| Alternate Current | Redstone engine replacement |
+| Chunky | World pre-generation |
 
-| Mod | Purpose | Source | Version |
-|-----|---------|--------|---------|
-| NeoVelocity | Velocity modern forwarding for NeoForge | [Modrinth](https://modrinth.com/mod/neovelocity) | 1.2.6 |
+### Infrastructure (server-side, no client install)
 
-## Map
+| Mod | Purpose |
+|-----|---------|
+| NeoVelocity | Velocity modern forwarding for NeoForge |
+| BlueMap | 3D web map |
 
-| Mod | Purpose | Source | Version |
-|-----|---------|--------|---------|
-| BlueMap | 3D web map | [GitHub](https://github.com/BlueMap-Minecraft/BlueMap) | 5.16+ NeoForge |
+Terralith is not included — creative mode builds from scratch, worldgen
+overhaul adds no value.
 
-## Not Included (vs modded)
+## Performance Patches
 
-- Terralith — insane is creative mode, players build from scratch.
-  No terrain to explore; worldgen overhaul adds no value here.
+Applied via `PATCH_DEFINITIONS=/config/insane/patches`:
+
+| Patch | Target | Settings |
+|-------|--------|----------|
+| neovelocity.json | neovelocity-common.toml | Forwarding secret injection |
+
+## Resource Allocation
+
+| Setting | Value |
+|---------|-------|
+| Container memory | 12g |
+| JVM heap | 7G |
+| memory.high | 10800M |
+| View distance | 12 chunks |
+| Simulation distance | 8 chunks |
 
 ## Player Requirements
 
-Players must install NeoForge 1.21.8 on their client. The phase 1 stack is
-entirely server-side — the client needs only a matching NeoForge version.
-
-## Phase 2 Content Mods (deferred — require client install)
-
-Everything from the modded world plus the wild stuff:
-
-| Mod | Purpose | Type |
-|-----|---------|------|
-| Create | Mechanical automation, kinetics, trains | Tech |
-| Mekanism | Energy, ore processing, MekaSuit | Tech |
-| Applied Energistics 2 | Digital storage and autocrafting | Tech |
-| Botania | Botanical magic and automation | Magic |
-| Iron's Spellbooks | Pre-made combat spells with effects | Magic |
-| Ars Nouveau | Custom spell creation from glyphs | Magic |
+NeoForge 1.21.11 on the client. All mods listed above are server-side —
+the client needs only a matching NeoForge version with no additional mods.
