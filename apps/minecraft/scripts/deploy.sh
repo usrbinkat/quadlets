@@ -73,11 +73,6 @@ for dropdir in "${APP_DIR}/quadlet"/*.container.d; do
     echo "  Installed: $(basename "$dropdir")/"
 done
 
-# Link config directory (bind-mounted into containers via Volume=./config:/config:ro,Z)
-# Quadlet resolves ./config relative to the unit file location (~/.config/containers/systemd/).
-echo "Linking config directory..."
-ln -sfn "${APP_DIR}/config" "${SYSTEMD_DIR}/config"
-echo "  Linked: config -> ${APP_DIR}/config"
 
 # Reload systemd
 echo "Reloading systemd user daemon..."

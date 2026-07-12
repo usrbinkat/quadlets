@@ -12,7 +12,7 @@ Network=minecraft.network
 PublishPort=25565:25565
 
 Volume=%h/minecraft/proxy:/server:Z
-Volume=./config:/config:ro,Z
+Volume=%h/quadlets/apps/minecraft/config:/config:ro,Z
 
 UserNS=keep-id:uid=1000,gid=1000
 User=1000
