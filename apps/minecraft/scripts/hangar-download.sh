@@ -45,24 +45,50 @@ while IFS= read -r line || [[ -n "$line" ]]; do
         continue
     fi
 
-    # Build download URL
-    download_url="${HANGAR_API}/${author}/${slug}/versions/${version}/PAPER/download"
-
-    # Resolve the redirect to get the actual filename
-    if ! jar_url=$(curl -sfLI --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{url_effective}' "$download_url"); then
-        echo "      ERROR: redirect resolution failed for ${author}/${slug} v${version}"
+    # Check if Hangar hosts the file or links externally
+    version_info=$(curl -sf --max-time "$CURL_TIMEOUT" "${HANGAR_API}/${author}/${slug}/versions/${version}")
+    if [[ -z "$version_info" ]]; then
+        echo "      ERROR: could not fetch version info for ${author}/${slug} v${version}"
         FAILURES=$((FAILURES + 1))
         continue
     fi
 
-    # Detect external host redirects that will 403 (CurseForge, etc.)
-    if [[ "$jar_url" != *"hangar"* && "$jar_url" != *"papermc"* ]]; then
-        echo "      ERROR: ${author}/${slug} redirects to external host ($(echo "$jar_url" | cut -d/ -f3)), automated download blocked"
+    # Extract PAPER download info
+    paper_download_url=$(echo "$version_info" | python3 -c 'import sys,json; d=json.load(sys.stdin)["downloads"].get("PAPER",{}); print(d.get("downloadUrl") or "")' 2>/dev/null)
+    paper_external_url=$(echo "$version_info" | python3 -c 'import sys,json; d=json.load(sys.stdin)["downloads"].get("PAPER",{}); print(d.get("externalUrl") or "")' 2>/dev/null)
+
+    if [[ -n "$paper_download_url" ]]; then
+        # Hangar-hosted file — use the API download endpoint
+        download_url="${HANGAR_API}/${author}/${slug}/versions/${version}/PAPER/download"
+        if ! jar_url=$(curl -sfLI --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{url_effective}' "$download_url"); then
+            echo "      ERROR: redirect resolution failed for ${author}/${slug} v${version}"
+            FAILURES=$((FAILURES + 1))
+            continue
+        fi
+        jar_name=$(basename "$jar_url")
+    elif [[ "$paper_external_url" == *"github.com"* ]]; then
+        # External GitHub release — resolve JAR from GitHub releases API
+        # Extract owner/repo and tag from URL like https://github.com/Owner/Repo/releases/tag/vX.Y.Z
+        gh_path=$(echo "$paper_external_url" | sed 's|https://github.com/||; s|/releases/tag/.*||')
+        gh_tag=$(echo "$paper_external_url" | sed 's|.*/releases/tag/||')
+        echo "      GitHub release: ${gh_path} tag ${gh_tag}"
+
+        # Find the bukkit/paper JAR asset
+        jar_url=$(curl -sf --max-time "$CURL_TIMEOUT" "https://api.github.com/repos/${gh_path}/releases/tags/${gh_tag}" \
+            | python3 -c 'import sys,json; assets=json.load(sys.stdin).get("assets",[]); urls=[a["browser_download_url"] for a in assets if "bukkit" in a["name"].lower() or "paper" in a["name"].lower()]; print(urls[0] if urls else "")' 2>/dev/null)
+
+        if [[ -z "$jar_url" ]]; then
+            echo "      ERROR: no bukkit/paper JAR found in GitHub release ${gh_path}@${gh_tag}"
+            FAILURES=$((FAILURES + 1))
+            continue
+        fi
+        download_url="$jar_url"
+        jar_name=$(basename "$jar_url")
+    else
+        echo "      ERROR: ${author}/${slug} has no Hangar download and external URL is not GitHub (${paper_external_url})"
         FAILURES=$((FAILURES + 1))
         continue
     fi
-
-    jar_name=$(basename "$jar_url")
 
     if [[ -f "${PLUGINS_DIR}/${jar_name}" ]]; then
         echo "      Already installed: ${jar_name}"

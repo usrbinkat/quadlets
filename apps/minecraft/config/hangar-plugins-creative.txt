@@ -1,4 +1,4 @@
 # Hangar plugins for creative
-# Format: author/slug
+# Format: author/slug (supports Hangar-hosted and GitHub-external releases)
 UrAvgCode/chestsort
-# SzaBee13/double-doors-server
+SzaBee13/double-doors-server

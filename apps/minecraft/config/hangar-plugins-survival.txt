@@ -1,5 +1,5 @@
 # Hangar plugins for survival
-# Format: author/slug
+# Format: author/slug (supports Hangar-hosted and GitHub-external releases)
 UrAvgCode/chestsort
-# Imperialroma10/HarvestMaster
-# SzaBee13/double-doors-server
+SzaBee13/double-doors-server
+# Imperialroma10/HarvestMaster  # CurseForge-only, Cloudflare blocks automated download
