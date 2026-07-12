@@ -15,12 +15,18 @@ set -euo pipefail
 
 TARGET="${1:-all}"
 
+FAILURES=0
+
 start_service() {
     local unit="$1"
     echo "=== ${unit} ==="
     systemctl --user stop "${unit}" 2>/dev/null || true
     systemctl --user reset-failed "${unit}" 2>/dev/null || true
-    systemctl --user start "${unit}"
+    if ! systemctl --user start "${unit}"; then
+        echo "  FAILED to start ${unit}"
+        FAILURES=$((FAILURES + 1))
+        return
+    fi
     echo "  Started. Waiting for initial output..."
     sleep 5
     systemctl --user status "${unit}" --no-pager --lines=5
@@ -55,3 +61,4 @@ esac
 
 echo "=== Fleet Status ==="
 systemctl --user list-units "minecraft*" --no-pager --no-legend
+exit "${FAILURES}"
