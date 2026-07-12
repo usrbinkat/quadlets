@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Start the Minecraft fleet with clean state.
-# Usage: ./start.sh [proxy|survival|creative|modded-survival|modded-creative|all]
+# Usage: ./start.sh [proxy|survival|creative|modded|insane|all]
 # Default: starts proxy, then all backends.
 #
 # Each start: stops existing container (if running), resets failed state,
@@ -9,8 +9,7 @@
 #
 # Service naming:
 #   Vanilla worlds use the template: minecraft@survival.service, minecraft@creative.service
-#   Modded worlds use explicit units: minecraft-modded-survival.service, minecraft-modded-creative.service
-#   (Podman 5.8 does not support Image= override in template drop-ins)
+#   NeoForge worlds use explicit units: minecraft-modded.service, minecraft-insane.service
 set -euo pipefail
 
 TARGET="${1:-all}"
@@ -40,21 +39,21 @@ case "${TARGET}" in
     survival|creative)
         start_service "minecraft@${TARGET}.service"
         ;;
-    modded-survival)
-        start_service minecraft-modded-survival.service
+    modded)
+        start_service minecraft-modded.service
         ;;
-    modded-creative)
-        start_service minecraft-modded-creative.service
+    insane)
+        start_service minecraft-insane.service
         ;;
     all)
         start_service minecraft-proxy.service
         start_service minecraft@survival.service
         start_service minecraft@creative.service
-        start_service minecraft-modded-survival.service
-        start_service minecraft-modded-creative.service
+        start_service minecraft-modded.service
+        start_service minecraft-insane.service
         ;;
     *)
-        echo "Usage: $0 [proxy|survival|creative|modded-survival|modded-creative|all]"
+        echo "Usage: $0 [proxy|survival|creative|modded|insane|all]"
         exit 1
         ;;
 esac

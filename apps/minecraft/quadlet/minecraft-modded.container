@@ -1,20 +1,19 @@
 [Unit]
-Description=Minecraft Java Edition - modded-creative (BrainCraft)
+Description=Minecraft Java Edition - modded (BrainCraft)
 StartLimitIntervalSec=300
 StartLimitBurst=5
 
 [Container]
 # NeoForge requires Java 21 (jdk.crypto.ec module missing from java25 JRE).
-# Podman 5.8 does not support Image= override in template drop-ins, so modded
-# instances use explicit container files instead of the minecraft@.container
-# template.
+# Separate container file allows referencing a different image than the
+# vanilla template which uses java25 for Paper 26.x.
 Image=minecraft-server-java21.image
-ContainerName=minecraft-modded-creative
+ContainerName=minecraft-modded
 AutoUpdate=registry
 
 Network=minecraft.network
 
-Volume=%h/minecraft/modded-creative:/data:Z
+Volume=%h/minecraft/modded:/data:Z
 Volume=%h/quadlets/apps/minecraft/config:/config:ro,Z
 
 UserNS=keep-id:uid=1000,gid=1000
@@ -44,18 +43,18 @@ NoNewPrivileges=true
 DropCapability=all
 Mask=/proc/acpi:/proc/kcore:/proc/keys:/proc/latency_stats:/proc/timer_list:/proc/timer_stats:/proc/sched_debug:/proc/scsi:/sys/firmware
 
-HostName=minecraft-modded-creative
+HostName=minecraft-modded
 
 LogDriver=journald
-LogOpt=tag=minecraft-modded-creative
+LogOpt=tag=minecraft-modded
 
 Label=app=minecraft
-Label=instance=modded-creative
+Label=instance=modded
 Label=managed-by=quadlet
-Annotation=io.containers.description=BrainCraft_Minecraft_modded-creative_Server
+Annotation=io.containers.description=BrainCraft_Minecraft_modded_Server
 
 EnvironmentFile=%h/.config/containers/systemd/minecraft-secrets.env
-EnvironmentFile=%h/.config/containers/systemd/minecraft-modded-creative.env
+EnvironmentFile=%h/.config/containers/systemd/minecraft-modded.env
 
 Pull=missing
 Retry=3
@@ -84,7 +83,7 @@ MemoryHigh=6300M
 MemorySwapMax=0
 TimeoutStartSec=900
 TimeoutStopSec=220
-SyslogIdentifier=minecraft-modded-creative
+SyslogIdentifier=minecraft-modded
 CPUWeight=200
 
 [Install]

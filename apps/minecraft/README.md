@@ -36,8 +36,8 @@ Internet
 │    │       │                                                         │
 │    │       ├── minecraft-survival ─── Paper, survival, normal        │
 │    │       ├── minecraft-creative ─── Paper, creative, peaceful      │
-│    │       ├── minecraft-modded-survival ── NeoForge, hard           │
-│    │       └── minecraft-modded-creative ── NeoForge, peaceful       │
+│    │       ├── minecraft-modded ────────── NeoForge, hard           │
+│    │       └── minecraft-insane ────────── NeoForge, peaceful       │
 │    │           (backends: online-mode=false, no published ports)      │
 │    │                                                                 │
 │    └── DNS: container names resolve via aardvark-dns on bridge       │
@@ -106,8 +106,8 @@ Start the fleet:
 systemctl --user start minecraft-proxy.service
 systemctl --user start minecraft@survival.service
 systemctl --user start minecraft@creative.service
-systemctl --user start minecraft-modded-survival.service
-systemctl --user start minecraft-modded-creative.service
+systemctl --user start minecraft-modded.service
+systemctl --user start minecraft-insane.service
 ```
 
 Verify:
@@ -149,7 +149,7 @@ loading, entity optimization, and native Velocity forwarding support. Velocity
 integration is configured via `PATCH_DEFINITIONS`, which patches
 `paper-global.yml` at `$.proxies.velocity.*` with the shared forwarding secret.
 
-**NeoForge (modded-survival, modded-creative):** Full mod ecosystem. The
+**NeoForge (modded, insane):** Full mod ecosystem. The
 NeoVelocity mod implements the `velocity:player_info` login plugin channel for
 NeoForge, enabling modern forwarding. It is installed automatically via
 `MODRINTH_PROJECTS=neovelocity` and configured via `PATCH_DEFINITIONS`.
@@ -186,8 +186,8 @@ The backend template `minecraft@.container` is instantiated per world. Systemd
 specifier `%i` expands to the instance name (survival, creative, etc.) in
 container names, hostnames, log tags, volume names, and environment file paths.
 
-Modded instances use dedicated `.container` files (`minecraft-modded-survival.container`,
-`minecraft-modded-creative.container`) with `Image=minecraft-server-java21.image`.
+Modded instances use dedicated `.container` files (`minecraft-modded.container`,
+`minecraft-insane.container`) with `Image=minecraft-server-java21.image`.
 Paper 26.x requires Java 25; NeoForge requires Java 21 (`jdk.crypto.ec` module).
 Separate container files allow each server type to reference the correct image
 independently.
@@ -235,14 +235,14 @@ cgroup kill — no partially-dead JVM state.
 | `quadlet/minecraft-proxy.image` | Proxy image pre-pull (itzg/mc-proxy:java25) |
 | `quadlet/minecraft-proxy.container` | Velocity proxy unit (only published port) |
 | `quadlet/minecraft@.container` | Vanilla backend server template (Paper, java25) |
-| `quadlet/minecraft-modded-survival.container` | Modded survival (NeoForge, java21, explicit) |
-| `quadlet/minecraft-modded-creative.container` | Modded creative (NeoForge, java21, explicit) |
+| `quadlet/minecraft-modded.container` | Modded survival (NeoForge, java21) |
+| `quadlet/minecraft-insane.container` | Insane creative (NeoForge, java21) |
 | `env/minecraft-secrets.env.example` | Forwarding secret template (deploy generates real file) |
 | `env/minecraft-proxy.env` | Proxy configuration (TYPE, CFG_* vars for velocity.toml) |
 | `env/minecraft-survival.env` | Survival world configuration |
 | `env/minecraft-creative.env` | Creative world configuration |
-| `env/minecraft-modded-survival.env` | Modded survival configuration |
-| `env/minecraft-modded-creative.env` | Modded creative configuration |
+| `env/minecraft-modded.env` | Modded survival configuration |
+| `env/minecraft-insane.env` | Insane creative configuration |
 | `config/velocity.toml` | Velocity config template (${CFG_*} placeholders) |
 | `config/patches/paper-velocity.json` | PATCH_DEFINITIONS for Paper velocity support |
 | `config/patches/neovelocity.json` | PATCH_DEFINITIONS for NeoForge forwarding (NeoVelocity) |
@@ -275,8 +275,8 @@ all services.
 | proxy | 1g | 900m | 512 | 150 | 30s |
 | survival | 5g | 4500m | 4096 | 100 | 130s |
 | creative | 5g | 4500m | 4096 | 100 | 130s |
-| modded-survival | 7g | 6300m | 8192 | 200 | 190s |
-| modded-creative | 7g | 6300m | 8192 | 200 | 190s |
+| modded | 7g | 6300m | 8192 | 200 | 190s |
+| insane | 7g | 6300m | 8192 | 200 | 190s |
 
 All containers have `memory.swap.max=0` (no swap) and `memory.oom.group=1`
 (atomic cgroup kill on OOM). The JVM heap (`MAX_MEMORY` in env files) must be
@@ -325,8 +325,8 @@ chmod 0600 ~/.config/containers/systemd/minecraft-secrets.env
 systemctl --user restart minecraft-proxy.service
 systemctl --user restart minecraft@survival.service
 systemctl --user restart minecraft@creative.service
-systemctl --user restart minecraft-modded-survival.service
-systemctl --user restart minecraft-modded-creative.service
+systemctl --user restart minecraft-modded.service
+systemctl --user restart minecraft-insane.service
 ```
 
 ### Logs and Debugging
