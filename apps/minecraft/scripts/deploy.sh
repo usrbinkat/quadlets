@@ -124,6 +124,23 @@ echo "Installing minecraft.target..."
 cp "${APP_DIR}/systemd/minecraft.target" "${SYSTEMD_USER_DIR}/minecraft.target"
 echo "  Installed: ${SYSTEMD_USER_DIR}/minecraft.target"
 
+# --- Create template instance symlinks ---
+# Quadlet processes [Install] WantedBy= from instance drop-ins only when the
+# instance is materialized as a symlink: minecraft@survival.container -> minecraft@.container.
+# Without the symlink, the generator does not know which instances exist and
+# cannot create minecraft.target.wants/ symlinks for them.
+
+echo "Creating template instance symlinks..."
+for world in survival creative; do
+    instance_link="${SYSTEMD_DIR}/minecraft@${world}.container"
+    if [[ ! -e "$instance_link" ]]; then
+        ln -sf "minecraft@.container" "$instance_link"
+        echo "  Created: minecraft@${world}.container -> minecraft@.container"
+    else
+        echo "  Exists: minecraft@${world}.container"
+    fi
+done
+
 # --- Generate drop-in files ---
 # Three drop-ins per container:
 #   10-memory.conf   — Memory=, PodmanArgs= cgroup-conf, MemorySwapMax=
@@ -255,6 +272,13 @@ systemctl --user reset-failed 2>/dev/null || true
 
 echo "Reloading systemd user daemon..."
 systemctl --user daemon-reload
+
+# Enable linger so the user session starts on boot without login.
+# Without linger, no user systemd session = no Quadlet services on reboot.
+if [[ "$(loginctl show-user "$(whoami)" -P Linger 2>/dev/null)" != "yes" ]]; then
+    echo "Enabling linger for $(whoami)..."
+    sudo loginctl enable-linger "$(whoami)" 2>/dev/null || loginctl enable-linger "$(whoami)" 2>/dev/null || true
+fi
 
 # Enable minecraft.target for boot auto-start.
 # The target itself is a regular unit file (not Quadlet-generated),
