@@ -170,6 +170,7 @@ Memory=${mem}
 PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=${high_bytes} --cgroup-conf=memory.oom.group=1
 
 [Service]
+MemoryHigh=${high_systemd}
 MemorySwapMax=0
 EOF
         echo "  ${container_file}: Memory=${mem}, memory.high=${high_systemd}"
