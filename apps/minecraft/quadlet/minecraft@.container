@@ -60,9 +60,12 @@ RetryDelay=5s
 Timezone=America/Los_Angeles
 
 # cgroup v2 direct writes
-CgroupConf=memory.swap.max=0
-CgroupConf=memory.high=4500000000
-CgroupConf=memory.oom.group=1
+# Podman >= 5.9: use CgroupConf= key directly:
+#   CgroupConf=memory.swap.max=0
+#   CgroupConf=memory.high=4500000000
+#   CgroupConf=memory.oom.group=1
+# Podman 5.8: pass via --cgroup-conf flag
+PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=4500000000 --cgroup-conf=memory.oom.group=1
 
 [Quadlet]
 DefaultDependencies=true
