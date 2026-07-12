@@ -15,7 +15,7 @@ POLL_INTERVAL=5
 BACKEND_SERVICES=(
     minecraft@survival.service
     minecraft@creative.service
-    minecraft-modded.service
+    # minecraft-modded.service  # disabled until larger hardware; start individually with ./start.sh modded
     minecraft-insane.service
 )
 
