@@ -79,7 +79,7 @@ TimeoutStartSec=300
 TimeoutStopSec=45
 SyslogIdentifier=minecraft-proxy
 CPUWeight=150
-MemoryHigh=900m
+MemoryHigh=900M
 MemorySwapMax=0
 
 [Install]
