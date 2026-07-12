@@ -35,6 +35,13 @@ mkdir -p "${HOME}/minecraft/modded-survival"
 mkdir -p "${HOME}/minecraft/modded-creative"
 echo "  Created: ~/minecraft/{proxy,survival,creative,modded-survival,modded-creative}"
 
+# Remove stale proxy config so the container init copies our template from /config
+# The itzg/mc-proxy init script does not overwrite existing velocity.toml.
+# On redeploy, we want the versioned template to be the source of truth.
+rm -f "${HOME}/minecraft/proxy/velocity.toml"
+rm -f "${HOME}/minecraft/proxy/forwarding.secret"
+echo "  Cleared: ~/minecraft/proxy/{velocity.toml,forwarding.secret} (regenerated from /config on start)"
+
 # Generate secret if requested or if none exists
 if [[ "${1:-}" == "--generate-secret" ]] || [[ ! -f "${SYSTEMD_DIR}/minecraft-secrets.env" ]]; then
     echo "Generating forwarding secret..."
