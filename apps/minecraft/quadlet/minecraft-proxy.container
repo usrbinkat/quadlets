@@ -11,7 +11,7 @@ AutoUpdate=registry
 Network=minecraft.network
 PublishPort=25565:25565
 
-Volume=minecraft-proxy-data.volume:/server:Z
+Volume=%h/minecraft/proxy:/server:Z
 Volume=./config:/config:ro,Z
 
 UserNS=keep-id:uid=1000,gid=1000

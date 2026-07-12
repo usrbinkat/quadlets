@@ -26,6 +26,15 @@ echo ""
 # Create target directory
 mkdir -p "${SYSTEMD_DIR}"
 
+# Create data directories in user home (bind-mounted into containers)
+echo "Creating data directories..."
+mkdir -p "${HOME}/minecraft/proxy"
+mkdir -p "${HOME}/minecraft/survival"
+mkdir -p "${HOME}/minecraft/creative"
+mkdir -p "${HOME}/minecraft/modded-survival"
+mkdir -p "${HOME}/minecraft/modded-creative"
+echo "  Created: ~/minecraft/{proxy,survival,creative,modded-survival,modded-creative}"
+
 # Generate secret if requested or if none exists
 if [[ "${1:-}" == "--generate-secret" ]] || [[ ! -f "${SYSTEMD_DIR}/minecraft-secrets.env" ]]; then
     echo "Generating forwarding secret..."

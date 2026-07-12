@@ -10,7 +10,7 @@ AutoUpdate=registry
 
 Network=minecraft.network
 
-Volume=minecraft-data@.volume:/data:Z
+Volume=%h/minecraft/%i:/data:Z
 Volume=./config:/config:ro,Z
 
 UserNS=keep-id:uid=1000,gid=1000
