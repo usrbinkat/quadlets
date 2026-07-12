@@ -1,4 +1,4 @@
-# Hangar plugins for creative world
+# Hangar plugins for creative
 # Format: author/slug
 UrAvgCode/chestsort
-# SzaBee13/double-doors-server  # GitHub-hosted, external redirect blocked
+# SzaBee13/double-doors-server
