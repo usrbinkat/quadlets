@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Enable and start Minecraft fleet services.
-# Usage: ./enable.sh [proxy|survival|creative|modded|insane|all]
+# Usage: ./enable.sh [proxy|survival|creative|modded|insane|all] [--force]
 #
 # Reads fleet configuration from .env.example (defaults) then .env (overrides).
 # FLEET_SURVIVAL, FLEET_CREATIVE, FLEET_MODDED, FLEET_INSANE control which
@@ -21,9 +21,21 @@ set -a
 set +a
 
 TARGET="${1:-all}"
+FORCE=false
+[[ "${2:-}" == "--force" || "${1:-}" == "--force" ]] && FORCE=true
+[[ "${1:-}" == "--force" ]] && TARGET="all"
 FAILURES=0
 STARTUP_TIMEOUT="${FLEET_STARTUP_TIMEOUT:-180}"
 POLL_INTERVAL="${FLEET_POLL_INTERVAL:-5}"
+
+# --force: kill all containers immediately, skip graceful stop
+if [[ "$FORCE" == "true" ]]; then
+    echo "[$(ts)] === FORCE: killing all containers ==="
+    podman kill --all 2>/dev/null || true
+    podman rm -f --all 2>/dev/null || true
+    systemctl --user reset-failed 2>/dev/null || true
+    echo "  All containers killed"
+fi
 
 # Orphan units from prior naming schemes — always cleaned up
 ORPHAN_SERVICES=(
