@@ -71,14 +71,21 @@ for unitfile in "${APP_DIR}/quadlet"/*.network "${APP_DIR}/quadlet"/*.image "${A
 done
 
 # Download Hangar plugins for Paper worlds
+HANGAR_FAILURES=0
 echo "Downloading Hangar plugins..."
 for world in survival creative; do
     hangar_file="${APP_DIR}/config/hangar-plugins-${world}.txt"
     if [[ -f "$hangar_file" ]]; then
         echo "  ${world}:"
-        bash "${SCRIPT_DIR}/hangar-download.sh" "$world" "$hangar_file"
+        if ! bash "${SCRIPT_DIR}/hangar-download.sh" "$world" "$hangar_file"; then
+            HANGAR_FAILURES=$((HANGAR_FAILURES + $?))
+        fi
     fi
 done
+if [[ "$HANGAR_FAILURES" -gt 0 ]]; then
+    echo ""
+    echo "  WARNING: ${HANGAR_FAILURES} Hangar plugin download(s) failed — review errors above"
+fi
 
 # Reload systemd
 echo "Reloading systemd user daemon..."
