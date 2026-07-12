@@ -64,7 +64,7 @@ Timezone=America/Los_Angeles
 #   CgroupConf=memory.swap.max=0
 #   CgroupConf=memory.high=900000000
 # Podman 5.8: pass via --cgroup-conf flag
-PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=900000000
+PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=900000000 --cgroup-conf=memory.oom.group=1
 
 [Quadlet]
 DefaultDependencies=true

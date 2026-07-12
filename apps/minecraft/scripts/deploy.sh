@@ -70,6 +70,16 @@ for unitfile in "${APP_DIR}/quadlet"/*.network "${APP_DIR}/quadlet"/*.image "${A
     echo "  Installed: $(basename "$unitfile")"
 done
 
+# Download Hangar plugins for Paper worlds
+echo "Downloading Hangar plugins..."
+for world in survival creative; do
+    hangar_file="${APP_DIR}/config/hangar-plugins-${world}.txt"
+    if [[ -f "$hangar_file" ]]; then
+        echo "  ${world}:"
+        bash "${SCRIPT_DIR}/hangar-download.sh" "$world" "$hangar_file"
+    fi
+done
+
 # Reload systemd
 echo "Reloading systemd user daemon..."
 systemctl --user daemon-reload

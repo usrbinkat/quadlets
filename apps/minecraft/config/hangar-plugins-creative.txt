@@ -1,0 +1,4 @@
+# Hangar plugins for creative world
+# Format: author/slug
+UrAvgCode/chestsort
+SzaBee13/double-doors-server

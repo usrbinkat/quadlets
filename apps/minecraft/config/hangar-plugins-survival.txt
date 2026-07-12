@@ -1,0 +1,6 @@
+# Hangar plugins for survival world
+# Format: author/slug
+# Latest release for PAPER platform is downloaded automatically
+UrAvgCode/chestsort
+Imperialroma10/HarvestMaster
+SzaBee13/double-doors-server
