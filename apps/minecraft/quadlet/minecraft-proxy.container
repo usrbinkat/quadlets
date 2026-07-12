@@ -12,7 +12,7 @@ Network=minecraft.network
 PublishPort=25565:25565
 
 Volume=%h/minecraft/proxy:/server:Z
-Volume=%h/quadlets/apps/minecraft/config:/config:ro,Z
+Volume=%h/quadlets/apps/minecraft/config:/config:ro,z
 
 UserNS=keep-id:uid=1000,gid=1000
 User=1000
@@ -33,7 +33,7 @@ Notify=healthy
 
 StopTimeout=30
 
-Memory=1g
+Memory=2g
 PidsLimit=512
 Ulimit=nofile=65536:65536
 
@@ -64,7 +64,7 @@ Timezone=America/Los_Angeles
 #   CgroupConf=memory.swap.max=0
 #   CgroupConf=memory.high=900000000
 # Podman 5.8: pass via --cgroup-conf flag
-PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=900000000 --cgroup-conf=memory.oom.group=1
+PodmanArgs=--cgroup-conf=memory.swap.max=0 --cgroup-conf=memory.high=1800000000 --cgroup-conf=memory.oom.group=1
 
 [Quadlet]
 DefaultDependencies=true
@@ -79,7 +79,7 @@ TimeoutStartSec=300
 TimeoutStopSec=45
 SyslogIdentifier=minecraft-proxy
 CPUWeight=150
-MemoryHigh=900M
+MemoryHigh=1800M
 MemorySwapMax=0
 
 [Install]
