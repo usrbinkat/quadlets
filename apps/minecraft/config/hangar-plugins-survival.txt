@@ -3,4 +3,4 @@
 # Latest release for PAPER platform is downloaded automatically
 UrAvgCode/chestsort
 # Imperialroma10/HarvestMaster  # CurseForge-hosted, Cloudflare blocks API download
-SzaBee13/double-doors-server
+# SzaBee13/double-doors-server  # GitHub-hosted, external redirect blocked
