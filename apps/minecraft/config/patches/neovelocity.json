@@ -3,7 +3,7 @@
   "ops": [
     {
       "$set": {
-        "path": "$.secret",
+        "path": "$.forwarding.forwarding-secret",
         "value": "${CFG_VELOCITY_SECRET}"
       }
     }
