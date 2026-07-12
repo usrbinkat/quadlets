@@ -23,15 +23,15 @@ decompressed-bytes-per-second = 5242880
 [servers]
 survival = "${CFG_SERVER_SURVIVAL}"
 creative = "${CFG_SERVER_CREATIVE}"
-modded-survival = "${CFG_SERVER_MODDED_SURVIVAL}"
-modded-creative = "${CFG_SERVER_MODDED_CREATIVE}"
+modded = "${CFG_SERVER_MODDED}"
+insane = "${CFG_SERVER_INSANE}"
 try = ["survival"]
 
 [forced-hosts]
 "${CFG_HOST_SURVIVAL}" = ["survival"]
 "${CFG_HOST_CREATIVE}" = ["creative"]
-"${CFG_HOST_MODDED}" = ["modded-survival"]
-"${CFG_HOST_MODDED_CREATIVE}" = ["modded-creative"]
+"${CFG_HOST_MODDED}" = ["modded"]
+"${CFG_HOST_INSANE}" = ["insane"]
 
 [advanced]
 compression-threshold = 256

@@ -50,8 +50,8 @@ Internet
 |-------|-------------|-----------|------------|------|-------------|
 | survival | Paper | survival | normal | none | `survival.play.braincraft.io` |
 | creative | Paper | creative | peaceful | none | `creative.play.braincraft.io` |
-| modded-survival | NeoForge | survival | hard | NeoVelocity, Lithium, Spark, Chunky | `modded.play.braincraft.io` |
-| modded-creative | NeoForge | creative | peaceful | NeoVelocity, Lithium, Spark, Chunky | `modded-creative.play.braincraft.io` |
+| modded | NeoForge | survival | hard | NeoVelocity, Lithium, Spark, Chunky | `modded.play.braincraft.io` |
+| insane | NeoForge | creative | peaceful | NeoVelocity, Lithium, Spark, Chunky | `insane.play.braincraft.io` |
 
 All worlds share the same whitelist, operator list, and player authentication.
 A player's UUID, skin, and cape are preserved across all worlds via Velocity
@@ -65,7 +65,7 @@ Add any of the following addresses to your Minecraft Java Edition server list:
 survival.play.braincraft.io
 creative.play.braincraft.io
 modded.play.braincraft.io
-modded-creative.play.braincraft.io
+insane.play.braincraft.io
 play.braincraft.io              (connects to survival by default)
 ```
 
@@ -75,8 +75,8 @@ client). Once connected, switch worlds at any time with:
 ```
 /server survival
 /server creative
-/server modded-survival
-/server modded-creative
+/server modded
+/server insane
 ```
 
 Modded worlds require the matching NeoForge modpack installed on your client.
