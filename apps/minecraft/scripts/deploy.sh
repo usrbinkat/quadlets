@@ -218,6 +218,21 @@ EOF
 [Service]
 RestartSec=${restart_sec}
 EOF
+
+    # 40-bluemap.conf — BlueMap web server port mapping for backend worlds
+    # Each world publishes BlueMap (container port 8100) on a unique host port.
+    # Port = FLEET_BLUEMAP_BASE_PORT + world index (survival=0, creative=1, modded=2, insane=3).
+    # Proxy does not run BlueMap.
+    if [[ "$world" != "proxy" ]]; then
+        declare -A BLUEMAP_INDEX=([survival]=0 [creative]=1 [modded]=2 [insane]=3)
+        base_port="${FLEET_BLUEMAP_BASE_PORT:-8100}"
+        host_port=$(( base_port + BLUEMAP_INDEX[$world] ))
+        cat > "${dropin_dir}/40-bluemap.conf" <<EOF
+[Container]
+PublishPort=${host_port}:8100
+EOF
+        echo "  ${container_file}: BlueMap port ${host_port}:8100"
+    fi
 done
 
 # --- Download Hangar plugins for enabled Paper worlds ---
