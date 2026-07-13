@@ -31,7 +31,8 @@ identity (skin, cape, UUID) follows you everywhere.
 Faithful vanilla Minecraft with quality-of-life improvements. Normal
 difficulty, PvP enabled. The main world — stakes matter here.
 
-- Land claims protect your builds from grief
+- Open by default — everything is accessible, nothing is locked
+- Optional land claims let you protect specific builds if you choose
 - Block logging tracks who placed or broke every block
 - Homes, warps, and teleports for navigation
 - Right-click harvest for crops
@@ -208,21 +209,79 @@ Some visual differences exist between Java and Bedrock rendering.
 
 ### Land Claims (Survival — GriefPrevention)
 
-Protect your builds from other players. Claims use a golden shovel.
+The survival world is **open by default**. Any player can build anywhere, open
+any chest, use any button or door, and interact with any animal — nothing is
+locked or restricted. This is a whitelisted server; everyone here is trusted.
 
-| Action | How |
-|--------|-----|
-| Create a claim | Hold a golden shovel, right-click two opposite corners |
-| Expand a claim | Right-click a corner with the golden shovel, right-click the new corner |
-| Remove a claim | Stand inside it, `/abandonclaim` |
-| Trust a player | `/trust <player>` (full build access) |
-| Container trust | `/containertrust <player>` (open chests only) |
-| Access trust | `/accesstrust <player>` (use buttons, doors) |
-| Remove trust | `/untrust <player>` |
-| See claim borders | Right-click the ground with a stick |
-| Check claim blocks | `/claimslist` |
+If you want to protect a specific build, GriefPrevention lets you create
+**optional land claims**. Inside a claim, only you and players you trust can
+build, break blocks, or open containers. Everything outside claims remains open
+to everyone.
 
-New players start with 100 claim blocks. You earn more by playing.
+#### How claims work
+
+1. **Get a golden shovel** — craft one or use `/kit` if available.
+2. **Mark two corners** — right-click the ground at one corner, walk to the
+   diagonal opposite corner, right-click again. Glowstone and gold blocks
+   appear briefly to show the claim boundary.
+3. **Check your claim** — right-click the ground with a **stick** to see claim
+   borders highlighted.
+
+Claims extend from sky to bedrock automatically. As you dig deeper under your
+claim, the claim extends down with you.
+
+#### Managing claims
+
+| Command | What it does |
+|---------|-------------|
+| `/claimslist` | Show all your claims, locations, sizes, and remaining blocks |
+| `/abandonclaim` | Remove the claim you're standing in (blocks returned) |
+| `/abandonallclaims` | Remove all your claims |
+
+#### Sharing access
+
+By default your claim blocks everyone else. Use trust commands **while standing
+inside your claim** to grant access:
+
+| Command | What it grants |
+|---------|---------------|
+| `/trust <player>` | Full build access — place/break blocks, use everything |
+| `/containertrust <player>` | Open chests, furnaces, brewing stands, and use animals |
+| `/accesstrust <player>` | Use buttons, levers, doors, and beds |
+| `/permissiontrust <player>` | Let that player grant their trust level to others |
+| `/untrust <player>` | Revoke all access for that player |
+| `/trustlist` | Show who has access to the claim you're in |
+| `/trust public` | Grant access to everyone (useful for shared farms) |
+
+#### Subdividing claims
+
+Large claims can be divided into sections with different trust levels — for
+example, a public shop entrance with a private storage room behind it.
+
+| Command | What it does |
+|---------|-------------|
+| `/subdivideclaims` | Switch your shovel to subdivision mode |
+| `/basicclaims` | Switch back to normal claim mode |
+| `/restrictsubclaim` | Make a subclaim inherit NO permissions from the parent |
+
+#### Claim blocks
+
+You start with **100 claim blocks** and earn **100 more per hour** of play time
+(up to 80,000 max). A 10×10 claim uses 100 blocks. Abandoning a claim returns
+all blocks.
+
+| Command | What it does |
+|---------|-------------|
+| `/claimslist` | See your block balance and all claims |
+| `/trapped` | Teleport out if stuck inside someone else's claim |
+
+#### Quick reference
+
+- **Stick**: right-click ground to see nearby claim borders
+- **Golden shovel**: right-click two corners to create/resize claims
+- Everything outside claims is fully open — no restrictions
+- Creeper and TNT explosions do not destroy blocks above sea level (server-wide)
+- Fire does not spread or destroy blocks (server-wide)
 
 ### Block Logging (CoreProtect)
 

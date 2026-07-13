@@ -235,6 +235,23 @@ EOF
     fi
 done
 
+# --- Seed plugin configs into mutable data directories ---
+# GriefPrevention config is in the read-only config mount but GP writes to
+# plugins/GriefPreventionData/config.yml in the mutable data dir. Seed it
+# at deploy time so GP starts with the correct settings. GP reads this on
+# startup; /gpreload picks up changes without restart.
+
+echo "Seeding plugin configs..."
+if [[ "${FLEET_SURVIVAL:-false}" == "true" ]]; then
+    GP_CONFIG_SRC="${APP_DIR}/config/survival/griefprevention-config.yml"
+    GP_CONFIG_DST="${HOME}/minecraft/survival/plugins/GriefPreventionData/config.yml"
+    if [[ -f "$GP_CONFIG_SRC" ]]; then
+        mkdir -p "$(dirname "$GP_CONFIG_DST")"
+        cp "$GP_CONFIG_SRC" "$GP_CONFIG_DST"
+        echo "  survival: GriefPrevention config seeded"
+    fi
+fi
+
 # --- Download Hangar plugins for enabled Paper worlds ---
 
 HANGAR_FAILURES=0
